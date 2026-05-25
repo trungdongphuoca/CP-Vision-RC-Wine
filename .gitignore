@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+*.egg-info/
+
+# Large data files (use DVC or Kaggle API instead)
+data/raw/*.csv
+data/processed/*.jsonl
+
+# Model artifacts (large binary files)
+models/lora_wine_model/
+models/*.zip
+Archive.zip
+
+# Vector store (rebuilt automatically)
+chroma_db/
+
+# Evaluation outputs (regenerated)
+results/*.csv
+!results/baseline_comparison.csv
+!results/final_comparison.csv
+!results/evaluation_results_summary.csv
+results/*.npy
+results/*.pkl
+results/.matplotlib/
+
+# macOS
+.DS_Store
+
+# Notebooks (track only source, not outputs)
+notebooks/.ipynb_checkpoints/
+
+# Environment
+.env
+
+# Heavy models
+results/training_outputs/
+*.safetensors
+*.bin
+*.pt
+*.pth

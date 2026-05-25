@@ -1,0 +1,472 @@
+[
+  {
+    "query": "Bold red Cabernet Sauvignon from Napa Valley under $60 for steak dinner",
+    "results": {
+      "BM25": {
+        "wines": [
+          {
+            "rank": 1,
+            "title": "Midsummer Cellars 2013 Ca\u00f1on Creek Vineyard Cabernet Sauvignon (Napa Valley)",
+            "semantic_id": "US-CALI-CABE-2013",
+            "score": 14.072312112766632,
+            "xai": {
+              "price_match": 0.8,
+              "style_match": 1.0,
+              "pairing_match": 1.0,
+              "region_match": 0.0,
+              "xai_score": 0.69
+            }
+          },
+          {
+            "rank": 2,
+            "title": "Michael David 2013 Freakshow Cabernet Sauvignon (Lodi)",
+            "semantic_id": "US-CALI-CABE-2013",
+            "score": 12.182658219730072,
+            "xai": {
+              "price_match": 0.333,
+              "style_match": 1.0,
+              "pairing_match": 0.0,
+              "region_match": 0.0,
+              "xai_score": 0.35
+            }
+          },
+          {
+            "rank": 3,
+            "title": "M\u00e1scara de Feugo 2012 Cabernet Sauvignon (Central Valley)",
+            "semantic_id": "CHIL-CENT-CABE-2012",
+            "score": 11.632847347385042,
+            "xai": {
+              "price_match": 0.167,
+              "style_match": 1.0,
+              "pairing_match": 0.0,
+              "region_match": 0.0,
+              "xai_score": 0.3
+            }
+          }
+        ],
+        "latency_ms": 9.603023529052734
+      },
+      "TF-IDF": {
+        "wines": [
+          {
+            "rank": 1,
+            "title": "Parcel 41 2011 Merlot (Napa Valley)",
+            "semantic_id": "US-CALI-MERL-2011",
+            "score": 0.18605836796415218,
+            "xai": {
+              "price_match": 0.317,
+              "style_match": 0.1,
+              "pairing_match": 0.0,
+              "region_match": 0.0,
+              "xai_score": 0.12
+            }
+          },
+          {
+            "rank": 2,
+            "title": "Trailhead 2010 Cabernet Sauvignon (Napa Valley)",
+            "semantic_id": "US-CALI-CABE-2010",
+            "score": 0.15647234309423794,
+            "xai": {
+              "price_match": 0.5,
+              "style_match": 1.0,
+              "pairing_match": 0.0,
+              "region_match": 0.0,
+              "xai_score": 0.4
+            }
+          },
+          {
+            "rank": 3,
+            "title": "Beaver Creek 2008 Fairytale Red (Napa Valley)",
+            "semantic_id": "US-CALI-REDB-2008",
+            "score": 0.14756005950393225,
+            "xai": {
+              "price_match": 0.65,
+              "style_match": 0.5,
+              "pairing_match": 0.0,
+              "region_match": 0.0,
+              "xai_score": 0.32
+            }
+          }
+        ],
+        "latency_ms": 167.18626022338867
+      }
+    },
+    "total_latency_ms": 177.8
+  },
+  {
+    "query": "Light crisp white wine from France around $25 with seafood",
+    "results": {
+      "BM25": {
+        "wines": [
+          {
+            "rank": 1,
+            "title": "Ch\u00e2teau C\u00f4te Montpezat 2015 Le Canon de C\u00f4te Montpezat Ros\u00e9 (Bordeaux Ros\u00e9)",
+            "semantic_id": "FRAN-BORD-ROS-2015",
+            "score": 12.95340359756467,
+            "xai": {
+              "price_match": 0.8,
+              "style_match": 0.1,
+              "pairing_match": 0.0,
+              "region_match": 1.0,
+              "xai_score": 0.415
+            }
+          },
+          {
+            "rank": 2,
+            "title": "Ch\u00e2teau d'Arche 2011  Sauternes",
+            "semantic_id": "FRAN-BORD-BORD-2011",
+            "score": 12.69096843302345,
+            "xai": {
+              "price_match": 1.0,
+              "style_match": 0.333,
+              "pairing_match": 0.0,
+              "region_match": 1.0,
+              "xai_score": 0.5333
+            }
+          },
+          {
+            "rank": 3,
+            "title": "Ch\u00e2teau de la Vieille Tour 2016  Bordeaux Blanc",
+            "semantic_id": "FRAN-BORD-BORD-2016",
+            "score": 12.558252388148695,
+            "xai": {
+              "price_match": 0.8,
+              "style_match": 0.333,
+              "pairing_match": 0.0,
+              "region_match": 1.0,
+              "xai_score": 0.4733
+            }
+          }
+        ],
+        "latency_ms": 7.008790969848633
+      },
+      "TF-IDF": {
+        "wines": [
+          {
+            "rank": 1,
+            "title": "Dancing Bull 2007 Sauvignon Blanc (California)",
+            "semantic_id": "US-CALI-SAUV-2007",
+            "score": 0.15029726039923985,
+            "xai": {
+              "price_match": 0.48,
+              "style_match": 0.1,
+              "pairing_match": 0.0,
+              "region_match": 0.0,
+              "xai_score": 0.169
+            }
+          },
+          {
+            "rank": 2,
+            "title": "Clos du Lac 2011 Sauvignon Blanc (Amador County)",
+            "semantic_id": "US-CALI-SAUV-2011",
+            "score": 0.14006135340752313,
+            "xai": {
+              "price_match": 0.4,
+              "style_match": 0.1,
+              "pairing_match": 1.0,
+              "region_match": 0.0,
+              "xai_score": 0.345
+            }
+          },
+          {
+            "rank": 3,
+            "title": "Wines & Winemakers 2016 Samora Ros\u00e9 (Tejo)",
+            "semantic_id": "PORT-TEJO-ROS-2016",
+            "score": 0.1262776157605665,
+            "xai": {
+              "price_match": 0.48,
+              "style_match": 0.1,
+              "pairing_match": 0.0,
+              "region_match": 0.0,
+              "xai_score": 0.169
+            }
+          }
+        ],
+        "latency_ms": 3.9997100830078125
+      }
+    },
+    "total_latency_ms": 13.0
+  },
+  {
+    "query": "Sweet dessert wine from Italy for cheese pairing",
+    "results": {
+      "BM25": {
+        "wines": [
+          {
+            "rank": 1,
+            "title": "Molliver Vineyards NV Vidal Blanc (Virginia)",
+            "semantic_id": "US-VIRG-VIDA-NV",
+            "score": 11.245718529101921,
+            "xai": {
+              "price_match": 0.5,
+              "style_match": 0.1,
+              "pairing_match": 0.5,
+              "region_match": 0.0,
+              "xai_score": 0.275
+            }
+          },
+          {
+            "rank": 2,
+            "title": "Cookies & Cream 2010 Merlot (California)",
+            "semantic_id": "US-CALI-MERL-2010",
+            "score": 10.48911696411612,
+            "xai": {
+              "price_match": 0.5,
+              "style_match": 0.1,
+              "pairing_match": 0.5,
+              "region_match": 0.0,
+              "xai_score": 0.275
+            }
+          },
+          {
+            "rank": 3,
+            "title": "Florio NV Fine Sweet  (Marsala)",
+            "semantic_id": "ITAL-SICI-CATA-NV",
+            "score": 9.824382502153636,
+            "xai": {
+              "price_match": 0.5,
+              "style_match": 0.1,
+              "pairing_match": 0.5,
+              "region_match": 1.0,
+              "xai_score": 0.425
+            }
+          }
+        ],
+        "latency_ms": 5.013227462768555
+      },
+      "TF-IDF": {
+        "wines": [
+          {
+            "rank": 1,
+            "title": "Robert Mondavi 2010 Pinot Grigio (California)",
+            "semantic_id": "US-CALI-PINO-2010",
+            "score": 0.1628979530741018,
+            "xai": {
+              "price_match": 0.5,
+              "style_match": 0.1,
+              "pairing_match": 0.5,
+              "region_match": 0.0,
+              "xai_score": 0.275
+            }
+          },
+          {
+            "rank": 2,
+            "title": "Terre del Marchesato 2008 Marchesale Syrah (Toscana)",
+            "semantic_id": "ITAL-TUSC-SYRA-2008",
+            "score": 0.1489527501222946,
+            "xai": {
+              "price_match": 0.5,
+              "style_match": 0.1,
+              "pairing_match": 0.0,
+              "region_match": 1.0,
+              "xai_score": 0.325
+            }
+          },
+          {
+            "rank": 3,
+            "title": "Robert Hall 2005 Vintage Port Port (Paso Robles)",
+            "semantic_id": "US-CALI-PORT-2005",
+            "score": 0.1387837839722381,
+            "xai": {
+              "price_match": 0.5,
+              "style_match": 0.8,
+              "pairing_match": 0.5,
+              "region_match": 0.0,
+              "xai_score": 0.45
+            }
+          }
+        ],
+        "latency_ms": 3.998994827270508
+      }
+    },
+    "total_latency_ms": 11.0
+  },
+  {
+    "query": "Affordable Malbec from Argentina under $20",
+    "results": {
+      "BM25": {
+        "wines": [
+          {
+            "rank": 1,
+            "title": "DiamAndes 2010 Malbec (Uco Valley)",
+            "semantic_id": "ARGE-MEND-MALB-2010",
+            "score": 9.171996947166189,
+            "xai": {
+              "price_match": 1.0,
+              "style_match": 1.0,
+              "pairing_match": 0.5,
+              "region_match": 1.0,
+              "xai_score": 0.8
+            }
+          },
+          {
+            "rank": 2,
+            "title": "Sur de los Andes 2012 Cl\u00e1sico Malbec (Mendoza)",
+            "semantic_id": "ARGE-MEND-MALB-2012",
+            "score": 8.840058279016766,
+            "xai": {
+              "price_match": 0.75,
+              "style_match": 1.0,
+              "pairing_match": 0.5,
+              "region_match": 1.0,
+              "xai_score": 0.725
+            }
+          },
+          {
+            "rank": 3,
+            "title": "Benegas 2011 Benegas Lynch La Encerrada Estate Vineyard Malbec (Mendoza)",
+            "semantic_id": "ARGE-MEND-MALB-2011",
+            "score": 8.802840176593298,
+            "xai": {
+              "price_match": 0.364,
+              "style_match": 1.0,
+              "pairing_match": 0.5,
+              "region_match": 1.0,
+              "xai_score": 0.6091
+            }
+          }
+        ],
+        "latency_ms": 5.051612854003906
+      },
+      "TF-IDF": {
+        "wines": [
+          {
+            "rank": 1,
+            "title": "Finca Lalande 2012 Made with organically grown grapes Malbec (Tupungato)",
+            "semantic_id": "ARGE-MEND-MALB-2012",
+            "score": 0.24780476978186317,
+            "xai": {
+              "price_match": 0.85,
+              "style_match": 1.0,
+              "pairing_match": 0.5,
+              "region_match": 1.0,
+              "xai_score": 0.755
+            }
+          },
+          {
+            "rank": 2,
+            "title": "Castle Rock 2008 Reserve Pinot Noir (Russian River Valley)",
+            "semantic_id": "US-CALI-PINO-2008",
+            "score": 0.21305913041372349,
+            "xai": {
+              "price_match": 0.9,
+              "style_match": 0.1,
+              "pairing_match": 0.5,
+              "region_match": 0.0,
+              "xai_score": 0.395
+            }
+          },
+          {
+            "rank": 3,
+            "title": "Sonoma Crest 2004 Cabernet Sauvignon (Sonoma County)",
+            "semantic_id": "US-CALI-CABE-2004",
+            "score": 0.10447190523032207,
+            "xai": {
+              "price_match": 0.5,
+              "style_match": 0.1,
+              "pairing_match": 0.5,
+              "region_match": 0.0,
+              "xai_score": 0.275
+            }
+          }
+        ],
+        "latency_ms": 5.3043365478515625
+      }
+    },
+    "total_latency_ms": 11.9
+  },
+  {
+    "query": "Sparkling Champagne from France for celebration",
+    "results": {
+      "BM25": {
+        "wines": [
+          {
+            "rank": 1,
+            "title": "Drappier NV Carte d'Or Brut  (Champagne)",
+            "semantic_id": "FRAN-CHAM-CHAM-NV",
+            "score": 11.866519060292026,
+            "xai": {
+              "price_match": 0.5,
+              "style_match": 0.5,
+              "pairing_match": 0.5,
+              "region_match": 1.0,
+              "xai_score": 0.525
+            }
+          },
+          {
+            "rank": 2,
+            "title": "Tendil & Lombardi NV Blanc de Noirs Brut Pinot Noir (Champagne)",
+            "semantic_id": "FRAN-CHAM-PINO-NV",
+            "score": 11.460808407540448,
+            "xai": {
+              "price_match": 0.5,
+              "style_match": 0.1,
+              "pairing_match": 0.5,
+              "region_match": 1.0,
+              "xai_score": 0.425
+            }
+          },
+          {
+            "rank": 3,
+            "title": "Bruno Paillard 2002 Assemblage Brut  (Champagne)",
+            "semantic_id": "FRAN-CHAM-CHAM-2002",
+            "score": 11.460808407540448,
+            "xai": {
+              "price_match": 0.5,
+              "style_match": 0.5,
+              "pairing_match": 0.5,
+              "region_match": 1.0,
+              "xai_score": 0.525
+            }
+          }
+        ],
+        "latency_ms": 5.161523818969727
+      },
+      "TF-IDF": {
+        "wines": [
+          {
+            "rank": 1,
+            "title": "Brimoncourt NV Brut R\u00e9gence  (Champagne)",
+            "semantic_id": "FRAN-CHAM-CHAM-NV",
+            "score": 0.21649671900533396,
+            "xai": {
+              "price_match": 0.5,
+              "style_match": 0.5,
+              "pairing_match": 0.5,
+              "region_match": 1.0,
+              "xai_score": 0.525
+            }
+          },
+          {
+            "rank": 2,
+            "title": "Drappier NV Carte d'Or Brut  (Champagne)",
+            "semantic_id": "FRAN-CHAM-CHAM-NV",
+            "score": 0.21408807189972903,
+            "xai": {
+              "price_match": 0.5,
+              "style_match": 0.5,
+              "pairing_match": 0.5,
+              "region_match": 1.0,
+              "xai_score": 0.525
+            }
+          },
+          {
+            "rank": 3,
+            "title": "Drappier NV Carte d'Or Brut  (Champagne)",
+            "semantic_id": "FRAN-CHAM-CHAM-NV",
+            "score": 0.21099803291151692,
+            "xai": {
+              "price_match": 0.5,
+              "style_match": 0.5,
+              "pairing_match": 0.5,
+              "region_match": 1.0,
+              "xai_score": 0.525
+            }
+          }
+        ],
+        "latency_ms": 5.0106048583984375
+      }
+    },
+    "total_latency_ms": 11.7
+  }
+]
