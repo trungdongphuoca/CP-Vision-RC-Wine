@@ -1,265 +1,216 @@
-# Generative Retrieval for Explainable Wine Recommendation using LLMs
+﻿# CP-Vision-RC-Wine
 
-> **Đề tài:** Generative Retrieval for Explainable Wine Recommendation using Large Language Models  
-> **Dataset:** [Kaggle Wine Reviews 130k](https://www.kaggle.com/datasets/zynicide/wine-reviews) — Aeberhard, S. (2017)
+Ứng dụng Thị giác máy tính vào Hệ thống Gợi ý Rượu vang Đa phương thức  
+**Computer Vision Applications in Multimodal Wine Recommender Systems**
 
----
-
-## Kiến trúc hệ thống
-
-```
-[A] Data Preparation
-    winemag-data-130k-v2.csv → Semantic ID → group split JSONL
-    └── data_prep.py
-
-[B] LLM Fine-Tuning (Llama-3-8B + LoRA)
-    wine_train_130k.jsonl → lora_wine_model/
-    └── fine_tune.py  |  Wine_Finetune_Colab.ipynb
-
-[C] Baselines
-    BM25 + TF-IDF CF + Base RAG (no LoRA)
-    └── baseline_eval.py  |  base_rag_eval.py
-
-[D] RAG + XAI Pipeline
-    ChromaDB + FastAPI + SHAP Explanation
-    └── inference_rag.py  |  xai_shap.py
-
-[E] Evaluation
-    EM, ROUGE-L, BERTScore → final_comparison.csv
-    └── Wine_Evaluate_Colab.ipynb  |  merge_results.py
-```
+Luận văn Thạc sĩ — Trường Đại học Tôn Đức Thắng, Khoa CNTT  
+Học viên: Trần Thành Trung | GVHD: TS. Trần Trung Tín
 
 ---
 
-## Trạng thái hiện tại (Tuần 17/18)
+## Tổng quan
 
-| Module | File | Status |
-|---|---|---|
-| A. Data Prep | `data_prep.py` | ✅ Semantic_ID group split — no train/test ID overlap |
-| B. Fine-Tune | `src/fine_tune.py` + `models/lora_wine_model/` | ✅ LoRA r=16 script; rerun after new group split |
-| C1. BM25 | `evaluation/baseline_eval.py` | ✅ Group split Recall@10=0.187, MRR=0.075 |
-| C2. TF-IDF CF | `evaluation/baseline_eval.py` | ✅ Group split Recall@10=0.141, MRR=0.056 |
-| C3. Base RAG | `evaluation/base_rag_eval.py` | ✅ EM=0.00% (mock smoke test; GPU needed for real) |
-| D. RAG+XAI | `src/inference_rag.py` + `src/xai_shap.py` | ✅ SHAP integrated |
-| E. LLM Eval | `notebooks/Wine_Evaluate_Colab.ipynb` | 🔴 **TODO — chạy real eval trên Colab GPU** |
+Hệ thống cho phép người dùng chụp ảnh nhãn chai rượu vang bằng điện thoại để nhận được thông tin sản phẩm và danh sách gợi ý phù hợp theo hành vi cá nhân. Pipeline gồm 5 giai đoạn liên tiếp:
+
+1. **YOLOv11** — Phát hiện và cắt vùng nhãn chai trong ảnh thực tế
+2. **Cylindrical Unwarping** — Phẳng hóa hình học nhãn cong do thân chai hình trụ
+3. **Florence-2** — OCR trích xuất thông tin và mô tả phong cách nhãn
+4. **CLIP + FAISS** — So khớp đa phương thức, gợi ý thay thế khi hết hàng
+5. **CW-EASE^R+IPS** — Bộ gợi ý backend cá nhân hóa với khử thiên kiến phổ biến
 
 ---
 
-## Kết quả so sánh hiện tại (1000 samples)
+## Kết quả chính
 
-| Method | Recall@1 | Recall@5 | Recall@10 | NDCG@5 | MRR | ROUGE-L | BERTScore |
-|---|---|---|---|---|---|---|---|
-| BM25 | 0.0400 | 0.1140 | **0.1870** | 0.0774 | 0.0751 | — | — |
-| TF-IDF CF | 0.0290 | 0.0950 | 0.1410 | 0.0606 | 0.0557 | — | — |
-| Base RAG (no LoRA) | 0.0000 | — | — | — | — | 0.1245 | — |
-| **LLM-LoRA (Proposed)** | **Pending real Colab eval** | — | — | — | — | **Pending** | **Pending** |
+**OCR & Nhận diện nhãn chai (Florence-2 + Cylindrical Unwarping)**
 
-> **Luận điểm:** Nếu `LLM-LoRA Recall@1 > BM25 Recall@10` (0.187 trên group split) → single-shot GR vượt top-10 keyword retrieval
+| Cấu hình | F1 Variety | F1 Country |
+|:---|:---:|:---:|
+| Ảnh cong gốc (Warped) | 0.7333 | 0.6667 |
+| Ảnh sau phẳng hóa (Unwarped) | **1.0000** | **1.0000** |
+
+Thời gian xử lý end-to-end trên CPU: **3.85 giây** (giảm từ 20 giây ban đầu)
+
+**Gợi ý backend — Tập X-Wines (509,757 users test)**
+
+| Mô hình | Recall@10 | nDCG@10 | MRR |
+|:---|:---:|:---:|:---:|
+| User-KNN | 0.92% | 0.46% | — |
+| MF-SVD | 2.10% | 1.05% | 0.0402 |
+| Popularity-CF | 11.20% | 6.50% | 0.1542 |
+| EASE^R (Steck, 2019) | 8.823% | 9.523% | — |
+| **CW-EASE^R+IPS (Proposed)** | **8.928%** | **9.621%** | **0.2285** |
+
+> Popularity-CF có Recall@10 cao hơn nhờ khai thác thiên lệch phân phối (power-law), nhưng thua trên nDCG@10 (−47.9%) và MRR (−32.5%). Xem phân tích trong [bao_cao_toan_dien.md](thesis/bao_cao_toan_dien.md).
+
+**Cold-start (người dùng < 5 tương tác, n=102,683)**
+
+| Mô hình | Recall@10 | nDCG@10 |
+|:---|:---:|:---:|
+| EASE^R baseline | 4.52% | 4.12% |
+| CW-EASE^R+IPS | **10.69%** | **9.25%** |
+
+Kiểm định Wilcoxon signed-rank: p ≪ 0.001
 
 ---
 
 ## Cài đặt
 
 ```bash
-python3 -m venv .venv && source .venv/bin/activate
+python -m venv .venv
+.venv\Scripts\activate          # Windows
 pip install -r requirements.txt
 ```
 
----
-
-## Chạy hệ thống
-
-### 1. Chuẩn bị dữ liệu
-```bash
-python3 src/data_prep.py
-# Output: data/processed/wine_{train,val,test}_130k.jsonl
-```
-
-### 2. Fine-tuning (cần GPU — chạy trên Colab)
-```bash
-# Upload notebooks/Wine_Finetune_Colab.ipynb lên Google Colab
-# Tải về: lora_wine_model.zip → giải nén vào models/lora_wine_model/
-```
-
-### 3. Baseline evaluation
-```bash
-python3 evaluation/baseline_eval.py          # BM25 + TF-IDF CF
-python3 evaluation/base_rag_eval.py --mock   # Base RAG mock smoke test
-# Output: results/baseline_comparison.csv
-```
-
-### 4. Demo API
-```bash
-cd src && uvicorn inference_rag:app --reload --port 8080
-# UI:     http://localhost:8080
-# Health: http://localhost:8080/health
-# SHAP:   POST http://localhost:8080/explain
-```
-
-### 5. Đánh giá LLM (Colab GPU)
-```
-Upload lên Colab:
-  - notebooks/Wine_Evaluate_Colab.ipynb
-  - data/processed/wine_test_130k.jsonl
-  - results/baseline_comparison.csv
-  - models/lora_wine_model.zip
-
-Tải về → đặt vào results/:
-  - llm_eval_results.csv
-```
-
-### 6. Tổng hợp kết quả cuối
-```bash
-python3 evaluation/merge_results.py --llm results/llm_eval_results.csv
-# → In bảng so sánh 4 methods + LaTeX table
-# → Lưu: results/final_comparison.csv
-```
-
-> Không dùng `--add_mock_llm` cho bảng chính. Tuỳ chọn này chỉ tạo dòng
-> `LLM-LoRA (Estimated - not main)` để minh hoạ khi chưa có kết quả Colab thật.
-
-### 7. Test heuristic SHAP attribution standalone
-```bash
-python3 src/xai_shap.py
-# → Benchmark 3 queries, in heuristic SHAP values + latency
-```
-
-### 8. Chạy test
-```bash
-pytest
-```
+Yêu cầu: Python 3.10+, PyTorch 2.x, CUDA (tùy chọn — pipeline chạy được trên CPU)
 
 ---
 
-## API Endpoints
-
-| Method | Endpoint | Mô tả |
-|---|---|---|
-| GET | `/` | UI demo (chat interface) |
-| POST | `/recommend` | Wine recommendation + SHAP XAI |
-| POST | `/explain` | Standalone SHAP explanation |
-| GET | `/health` | System status (LLM, ChromaDB, SHAP) |
-
-### Ví dụ response `/recommend`
-```json
-{
-  "type": "recommendation",
-  "message": "I recommend this bold Cabernet...",
-  "retrieved_wine": {
-    "title": "Jordan 2016 Cabernet Sauvignon",
-    "country": "US", "variety": "Cabernet Sauvignon", "price": 47.0
-  },
-  "xai_explanation": {
-    "attribution_type": "heuristic_feature_attribution",
-    "score_model": "weighted_features_v1",
-    "feature_names": ["price_match", "style_match", "pairing_match", "region_match", "semantic_sim"],
-    "shap_values": [0.045, 0.082, 0.031, 0.150, 0.0],
-    "base_value": 0.325,
-    "explanation_text": "↑ region_match: +0.150\n↑ style_match: +0.082\n↑ price_match: +0.045"
-  }
-}
-```
-
----
-
-## XAI — Heuristic SHAP Feature Attribution
-
-SHAP (SHapley Additive exPlanations) được dùng để giải thích đóng góp của 5 feature
-trong một hàm điểm heuristic minh bạch. Đây là **heuristic feature attribution**,
-không phải giải thích trực tiếp trạng thái nội bộ của LLM hoặc ChromaDB.
-
-**5 features được phân tích:**
-
-| Feature | Ý nghĩa | Công thức |
-|---|---|---|
-| `price_match` | Budget compatibility | min(q_price, w_price) / max(...) |
-| `style_match` | Style keyword overlap | Jaccard(query words, variety words) |
-| `pairing_match` | Food pairing score | # food keywords matched / total |
-| `region_match` | Country mentioned | 1.0 if country in query else 0 |
-| `semantic_sim` | Embedding similarity | cosine(query_emb, wine_emb) |
+## Chạy Demo
 
 ```bash
-# Test heuristic SHAP standalone
-python3 src/xai_shap.py
+# Khởi động demo server (Flask, port 5050)
+python demo/app.py
+
+# Truy cập: http://localhost:5050
+# Upload ảnh nhãn chai → nhận thông tin + gợi ý
 ```
+
+Demo đi kèm 15 nhãn chai curated trong `demo/curated_demo_labels/` để test nhanh.
 
 ---
 
-## Semantic ID Design
+## Đánh giá
 
+### OCR & Computer Vision
+```bash
+# Đánh giá trên tập curated (n=15)
+python evaluation/cv_eval.py
+
+# Đánh giá thực tế quy mô lớn (n=1007 ảnh)
+python evaluation/cv_real_eval.py
+
+# Ablation: so sánh warped vs unwarped
+python evaluation/cv_ablation.py
 ```
-FORMAT: COUNTRY(4) - PROVINCE(4) - VARIETY(4) - YEAR(4)
 
-US-NAPA-CABE-2015  → Napa Valley Cabernet Sauvignon 2015
-FRAN-BORD-REDB-2018 → Bordeaux Red Blend 2018
-ITAL-TUSC-SANG-2016 → Tuscany Sangiovese 2016
-ARGE-MEND-MALB-2015 → Mendoza Malbec 2015
+### Bộ gợi ý backend
+```bash
+# CW-EASE^R+IPS (mô hình đề xuất)
+python evaluation/cw_ease_eval.py
+
+# Baseline: Cornac (User-KNN, SVD, VAECF, ...)
+python evaluation/cornac_eval.py
+
+# Tổng hợp kết quả
+python evaluation/merge_results.py
 ```
 
-**Thống kê:**
-- Total wines: 129,907
-- Unique Semantic IDs: ~13,245
-- Avg wines per ID: ~9.8 (multiple vintages/producers per style cluster)
+### Phân tích thống kê
+```bash
+python evaluation/statistical_analysis.py   # Wilcoxon signed-rank test
+python evaluation/plot_results.py           # Sinh biểu đồ vào results/figures/
+```
+
+Log đầy đủ quá trình chạy lưu tại `results/logs/`.
 
 ---
 
-## BibTeX
-
-```bibtex
-@misc{wine_kaggle_2017,
-  author    = {Aeberhard, Stefan and Forina, M.},
-  title     = {{Wine Reviews}},
-  year      = {2017},
-  publisher = {Kaggle},
-  url       = {https://www.kaggle.com/datasets/zynicide/wine-reviews}
-}
-```
-
----
-
-## Cấu trúc thư mục
+## Cấu trúc dự án
 
 ```
-Code LLM Recommend System/
-├── README.md
-├── requirements.txt
-├── .gitignore
-├── config.py                        ← centralized path constants
-├── reorganize.py                    ← script đã dùng để sắp xếp
+CP-Vision-RC-Wine/
 │
-├── src/                             ← source code chính
-│   ├── data_prep.py                   Tạo Semantic ID, split train/val/test
-│   ├── fine_tune.py                   LoRA fine-tuning Llama-3-8B
-│   ├── inference_rag.py               FastAPI server + SHAP integration
-│   └── xai_shap.py                    SHAP XAI module (5 features)
+├── src/                        # Source code chính
+│   ├── cv_wine.py              #   Pipeline thị giác: YOLO + Unwarping + Florence-2
+│   ├── inference_rag.py        #   FastAPI server + RAG Sommelier
+│   ├── data_prep.py            #   Chuẩn bị dữ liệu, Semantic ID
+│   ├── build_semantic_ids.py   #   Xây dựng Semantic ID phân cấp
+│   ├── fine_tune.py            #   LoRA fine-tuning (Llama-3-8B)
+│   ├── gnn_retrieval.py        #   GNN-based retrieval
+│   ├── visual_semantic_fusion.py #  CLIP + FAISS fusion
+│   ├── vlm_parser.py           #   Phân tích kết quả Florence-2
+│   ├── xai_shap.py             #   SHAP feature attribution
+│   └── attention_xai.py        #   Attention-based XAI
 │
-├── evaluation/                      ← scripts đánh giá
-│   ├── baseline_eval.py               BM25 + TF-IDF CF evaluation
-│   ├── base_rag_eval.py               Ablation: Base RAG không LoRA
-│   └── merge_results.py               Gộp results → LaTeX table
+├── evaluation/                 # Scripts đánh giá
+│   ├── cw_ease_eval.py         #   CW-EASE^R+IPS (mô hình đề xuất)
+│   ├── cornac_eval.py          #   Baseline CF (KNN, SVD, VAECF...)
+│   ├── cv_eval.py              #   OCR evaluation (curated set)
+│   ├── cv_real_eval.py         #   OCR evaluation (large-scale)
+│   ├── cv_ablation.py          #   Ablation warped vs unwarped
+│   ├── baseline_eval.py        #   BM25, TF-IDF, content-based
+│   ├── statistical_analysis.py #   Kiểm định thống kê Wilcoxon
+│   ├── plot_results.py         #   Sinh biểu đồ
+│   ├── eval_logger.py          #   Structured JSON evaluation logger
+│   └── merge_results.py        #   Tổng hợp kết quả
 │
-├── notebooks/                       ← Colab notebooks
-│   ├── Wine_Finetune_Colab.ipynb      Fine-tuning trên GPU
-│   ├── Wine_Evaluate_Colab.ipynb      Evaluation (1000 samples)
-│   ├── generate_eval_notebook.py      Generator script cho eval notebook
-│   └── generate_notebook.py           Generator script cho fine-tune notebook
+├── demo/                       # Demo application
+│   ├── app.py                  #   Flask server
+│   ├── index.html              #   Giao diện chính
+│   └── curated_demo_labels/    #   15 nhãn chai curated để demo
+│
+├── api/static/                 # Web UI (chat interface)
+├── models/                     # Model weights (.gitignored phần lớn)
+│   ├── yolo11_wine.pt          #   YOLOv11 fine-tuned (wine labels)
+│   └── catalog_clip_embeddings.pt # CLIP embeddings catalog
+│
+├── results/
+│   ├── figures/                #   Biểu đồ kết quả (28 PNG)
+│   ├── logs/                   #   Evaluation logs đầy đủ
+│   ├── cw_ease_eval_results.csv
+│   └── cornac_eval_results.csv
 │
 ├── data/
-│   ├── raw/winemag-data-130k-v2.csv   Kaggle Wine Reviews (129,907 records)
-│   └── processed/
-│       ├── wine_train_130k.jsonl       103,925 training samples (80%)
-│       ├── wine_val_130k.jsonl          12,991 validation samples (10%)
-│       └── wine_test_130k.jsonl         12,991 test samples (10%)
+│   ├── processed/              #   Catalog, Semantic ID mapping
+│   └── cv_ground_truth/        #   Ground truth cho OCR evaluation
 │
-├── results/                         ← evaluation outputs
-│   ├── baseline_comparison.csv        BM25 + TF-IDF CF + Base RAG metrics
-│   ├── final_comparison.csv           Bảng so sánh tổng hợp
-│   ├── bm25_per_query.csv             BM25 per-query results
-│   └── tfidf_per_query.csv            TF-IDF per-query results
-│
-├── models/                          ← model artifacts (.gitignored)
-│   └── lora_wine_model/               LoRA adapters (Llama-3-8B)
-│
-├── api/static/                      ← web interface (chat UI)
-└── chroma_db/                       ← ChromaDB vector store (.gitignored)
+├── scripts/                    # Utility scripts
+├── notebooks/                  # Colab notebooks
+├── synthetic_dataset/          # Dataset tổng hợp cho YOLO training
+├── tests/                      # Unit tests
+└── config.py                   # Cấu hình đường dẫn tập trung
 ```
+
+---
+
+## Dữ liệu
+
+| Dataset | Mô tả | Nguồn |
+|:---|:---|:---|
+| **X-Wines** | 21M ratings, 56K wines, 1M+ users | [Kaggle](https://www.kaggle.com/datasets/cbddo/xwines) |
+| **WineReviews 130K** | 130K mô tả hương vị (Winemag) | [Kaggle](https://www.kaggle.com/datasets/zynicide/wine-reviews) |
+| **Sapo** | Dữ liệu bán hàng thực tế tại Việt Nam | Nội bộ (không công khai) |
+| **XWines-1K Labels** | 1,007 ảnh nhãn chai thực tế | Trích từ X-Wines |
+
+Dữ liệu thô không được đưa lên repository. Xem `scripts/import_xwines.py` để tải về.
+
+---
+
+## Các mô hình bên ngoài (cần tải thủ công)
+
+| Mô hình | Mục đích | Nguồn |
+|:---|:---|:---|
+| `microsoft/Florence-2-large` | OCR + captioning | HuggingFace |
+| `openai/clip-vit-large-patch14` | Visual embeddings | HuggingFace |
+| `YOLOv11n` (pretrained) | Object detection backbone | Ultralytics |
+
+Fine-tuned weights (`yolo11_wine.pt`, `catalog_clip_embeddings.pt`) có trong `models/`.
+
+---
+
+## Tài liệu tham khảo chính
+
+- Steck, H. (2019). Embarrassingly Shallow Autoencoders for Sparse Data. *WWW 2019*
+- Schnabel et al. (2016). Recommendations as Treatments: Debiasing Learning and Evaluation. *ICML 2016*
+- Xiao et al. (2024). Florence-2: Advancing a Unified Representation for Vision Tasks. *arXiv 2311.06242*
+- Radford et al. (2021). Learning Transferable Visual Models from Natural Language Supervision. *ICML 2021*
+- Johnson et al. (2019). Billion-scale Similarity Search with GPUs. *IEEE Trans. Big Data*
+
+---
+
+## Ghi chú
+
+- Toàn bộ pipeline có thể chạy trên **CPU** (không cần GPU). Dùng GPU để tăng tốc Florence-2.
+- Dữ liệu Sapo và luận văn không được đưa lên repository do tính bảo mật.
+- Evaluation logs đầy đủ (không tóm tắt) lưu tại `results/logs/`.
