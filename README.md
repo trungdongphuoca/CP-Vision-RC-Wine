@@ -43,12 +43,12 @@ Thời gian xử lý end-to-end trên CPU: **3.85 giây** (giảm từ 20 giây 
 
 > Popularity-CF có Recall@10 cao hơn nhờ khai thác thiên lệch phân phối (power-law), nhưng thua trên nDCG@10 (−47.9%) và MRR (−32.5%). Xem phân tích trong [bao_cao_toan_dien.md](thesis/bao_cao_toan_dien.md).
 
-**Cold-start (người dùng < 5 tương tác, n=102,683)**
+**Cold-start (người dùng < 5 tương tác, n=238,895)**
 
 | Mô hình | Recall@10 | nDCG@10 |
 |:---|:---:|:---:|
-| EASE^R baseline | 4.52% | 4.12% |
-| CW-EASE^R+IPS | **10.69%** | **9.25%** |
+| EASE^R baseline | 8.36% | 6.00% |
+| CW-EASE^R+IPS | **8.48%** | **6.05%** |
 
 Kiểm định Wilcoxon signed-rank: p ≪ 0.001
 
