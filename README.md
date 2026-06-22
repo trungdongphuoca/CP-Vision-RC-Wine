@@ -1,10 +1,10 @@
-﻿# CP-Vision-RC-Wine
+# CP-Vision-RC-Wine
 
 Ứng dụng Thị giác máy tính vào Hệ thống Gợi ý Rượu vang Đa phương thức  
 **Computer Vision Applications in Multimodal Wine Recommender Systems**
 
-Luận văn Thạc sĩ — Trường Đại học Tôn Đức Thắng, Khoa CNTT  
-Học viên: Trần Thành Trung | GVHD: TS. Trần Trung Tín
+Chuyên đề 2 — Trường Đại học Tôn Đức Thắng, Khoa CNTT  
+Học viên: Trần Thành Trung | GVHD: TS. Bùi Quy Anh
 
 ---
 
