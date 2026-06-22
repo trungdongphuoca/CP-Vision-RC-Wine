@@ -44,3 +44,17 @@ def ensure_dirs():
     """Create all required directories if they don't exist."""
     for d in [DATA_RAW, DATA_PROC, MODELS, RESULTS, CHROMA_DB, STATIC_DIR]:
         d.mkdir(parents=True, exist_ok=True)
+
+def get_device() -> str:
+    """Check if CUDA is available and fully compatible (including embedding kernels)."""
+    try:
+        import torch
+        if not torch.cuda.is_available():
+            return "cpu"
+        # Test if embedding works on GPU (Blackwell compatibility test)
+        emb = torch.nn.Embedding(2, 2).cuda()
+        x = torch.tensor([0]).cuda()
+        emb(x)
+        return "cuda"
+    except Exception:
+        return "cpu"

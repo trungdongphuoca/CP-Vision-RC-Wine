@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Báo cáo Luận văn — Generative Retrieval for Explainable Wine Recommendation</title>
+<meta name="description" content="Truy xuất tạo sinh trong Hệ gợi ý rượu vang có khả năng giải thích sử dụng LLM — Trần Thành Trung, ĐH Tôn Đức Thắng 2026">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg-primary: #0a0a0f;
+  --bg-secondary: #111118;
+  --bg-card: #16161f;
+  --bg-glass: rgba(255,255,255,0.04);
+  --border: rgba(255,255,255,0.08);
+  --border-glow: rgba(139,92,246,0.3);
+  --accent-purple: #8b5cf6;
+  --accent-violet: #7c3aed;
+  --accent-indigo: #6366f1;
+  --accent-blue: #3b82f6;
+  --accent-cyan: #06b6d4;
+  --accent-emerald: #10b981;
+  --accent-amber: #f59e0b;
+  --accent-rose: #f43f5e;
+  --text-primary: #f1f0ff;
+  --text-secondary: #a19bc9;
+  --text-muted: #6b6890;
+  --wine-red: #c0392b;
+  --wine-gold: #d4a017;
+  --gradient-hero: linear-gradient(135deg, #1a0533 0%, #0f0a1a 50%, #0a1628 100%);
+  --gradient-card: linear-gradient(135deg, rgba(139,92,246,0.08) 0%, rgba(59,130,246,0.05) 100%);
+  --shadow-glow: 0 0 40px rgba(139,92,246,0.15);
+  --font-main: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font-main);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-secondary); }
+::-webkit-scrollbar-thumb { background: var(--accent-purple); border-radius: 3px; }
+
+/* ── NAV ── */
+#topnav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  background: rgba(10,10,15,0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 2rem;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-brand { font-size: 0.85rem; font-weight: 700; color: var(--accent-purple); letter-spacing: 0.05em; }
+.nav-links { display: flex; gap: 1.5rem; list-style: none; }
+.nav-links a { font-size: 0.78rem; color: var(--text-secondary); text-decoration: none; font-weight: 500; transition: color .2s; }
+.nav-links a:hover { color: var(--text-primary); }
+.nav-badge {
+  font-size: 0.7rem; padding: 2px 10px;
+  background: rgba(139,92,246,0.15); border: 1px solid var(--accent-purple);
+  border-radius: 20px; color: var(--accent-purple); font-weight: 600;
+}
+
+/* ── HERO ── */
+#hero {
+  min-height: 100vh;
+  background: var(--gradient-hero);
+  display: flex; align-items: center; justify-content: center;
+  text-align: center;
+  padding: 80px 2rem 4rem;
+  position: relative; overflow: hidden;
+}
+.hero-orbs { position: absolute; inset: 0; pointer-events: none; }
+.orb {
+  position: absolute; border-radius: 50%;
+  filter: blur(80px); opacity: 0.25;
+}
+.orb-1 { width: 500px; height: 500px; background: #6d28d9; top: -100px; left: -100px; animation: float1 8s ease-in-out infinite; }
+.orb-2 { width: 400px; height: 400px; background: #1e40af; bottom: -50px; right: -50px; animation: float2 10s ease-in-out infinite; }
+.orb-3 { width: 300px; height: 300px; background: #9f1239; top: 40%; left: 40%; animation: float3 12s ease-in-out infinite; }
+@keyframes float1 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(30px,20px)} }
+@keyframes float2 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(-20px,30px)} }
+@keyframes float3 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(15px,-15px)} }
+
+.hero-content { position: relative; max-width: 900px; }
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 18px; border-radius: 30px;
+  background: rgba(139,92,246,0.12); border: 1px solid rgba(139,92,246,0.3);
+  font-size: 0.75rem; font-weight: 600; color: var(--accent-purple);
+  margin-bottom: 1.5rem; letter-spacing: 0.05em;
+  animation: fadeInUp .6s ease both;
+}
+.hero-title {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 900; line-height: 1.15;
+  background: linear-gradient(135deg, #f1f0ff 0%, #c4b5fd 50%, #818cf8 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  margin-bottom: 0.5rem;
+  animation: fadeInUp .6s ease .1s both;
+}
+.hero-subtitle {
+  font-size: 1.1rem; color: var(--text-secondary); margin-bottom: 0.5rem;
+  font-style: italic;
+  animation: fadeInUp .6s ease .15s both;
+}
+.hero-meta {
+  display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center;
+  margin: 1.5rem 0 2.5rem;
+  animation: fadeInUp .6s ease .2s both;
+}
+.meta-item { font-size: 0.82rem; color: var(--text-secondary); }
+.meta-item span { color: var(--text-primary); font-weight: 600; }
+
+.hero-kpis {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem; margin-top: 2rem;
+  animation: fadeInUp .6s ease .35s both;
+}
+.kpi-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px; padding: 1rem;
+  backdrop-filter: blur(10px);
+  transition: transform .2s, border-color .2s;
+}
+.kpi-card:hover { transform: translateY(-3px); border-color: var(--accent-purple); }
+.kpi-value { font-size: 1.8rem; font-weight: 800; color: var(--accent-purple); line-height: 1; }
+.kpi-unit { font-size: 0.7rem; color: var(--text-secondary); font-weight: 600; }
+.kpi-label { font-size: 0.72rem; color: var(--text-muted); margin-top: 4px; }
+
+/* ── SECTIONS ── */
+.section {
+  padding: 5rem 2rem;
+  max-width: 1200px; margin: 0 auto;
+}
+.section-full {
+  padding: 5rem 2rem;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.section-inner { max-width: 1200px; margin: 0 auto; }
+
+.section-tag {
+  display: inline-block; font-size: 0.7rem; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-purple); margin-bottom: 0.5rem;
+  padding: 3px 12px; border-radius: 20px;
+  background: rgba(139,92,246,0.1); border: 1px solid rgba(139,92,246,0.25);
+}
+.section-title {
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  font-weight: 800; line-height: 1.25; margin-bottom: 0.75rem;
+  background: linear-gradient(135deg, #f1f0ff, #c4b5fd);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.section-desc { color: var(--text-secondary); font-size: 1rem; max-width: 700px; }
+
+/* ── CARDS ── */
+.grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px,1fr)); gap: 1.5rem; margin-top: 2.5rem; }
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px,1fr)); gap: 1.5rem; margin-top: 2.5rem; }
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px; padding: 1.5rem;
+  background-image: var(--gradient-card);
+  transition: transform .25s, border-color .25s, box-shadow .25s;
+  position: relative; overflow: hidden;
+}
+.card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--accent-purple), var(--accent-blue));
+  opacity: 0; transition: opacity .3s;
+}
+.card:hover { transform: translateY(-4px); border-color: rgba(139,92,246,0.3); box-shadow: var(--shadow-glow); }
+.card:hover::before { opacity: 1; }
+
+.card-icon { font-size: 2rem; margin-bottom: 1rem; }
+.card-title { font-size: 1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem; }
+.card-desc { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6; }
+.card-tag {
+  display: inline-block; font-size: 0.68rem; font-weight: 600;
+  padding: 2px 8px; border-radius: 10px; margin-top: 0.75rem;
+  background: rgba(139,92,246,0.15); color: var(--accent-purple);
+}
+
+/* ── CHART WRAPPERS ── */
+.chart-wrap {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 16px; padding: 1.5rem;
+  background-image: var(--gradient-card);
+}
+.chart-title { font-size: 0.95rem; font-weight: 700; margin-bottom: 1rem; color: var(--text-primary); }
+.chart-sub { font-size: 0.78rem; color: var(--text-muted); margin-bottom: 1.2rem; }
+
+/* ── TABLES ── */
+.table-wrap { overflow-x: auto; margin-top: 2rem; }
+table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+th {
+  background: rgba(139,92,246,0.12);
+  color: var(--accent-purple); font-weight: 700;
+  padding: 10px 14px; text-align: left;
+  border-bottom: 1px solid rgba(139,92,246,0.25);
+  white-space: nowrap;
+}
+td {
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+  color: var(--text-secondary); vertical-align: middle;
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(255,255,255,0.02); }
+.best { color: var(--accent-emerald); font-weight: 700; }
+.highlight-row td { background: rgba(139,92,246,0.06); color: var(--text-primary); font-weight: 600; }
+.highlight-row td:first-child { color: var(--accent-purple); }
+
+/* ── PIPELINE DIAGRAM ── */
+.pipeline {
+  display: flex; flex-wrap: wrap; align-items: flex-start;
+  gap: 0; margin: 2rem 0; position: relative;
+}
+.pipe-step {
+  flex: 1; min-width: 160px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 1.2rem 1rem;
+  text-align: center; position: relative;
+  background-image: var(--gradient-card);
+}
+.pipe-step + .pipe-step::before {
+  content: '→'; position: absolute; left: -22px; top: 50%; transform: translateY(-50%);
+  color: var(--accent-purple); font-size: 1.5rem; font-weight: 700;
+  z-index: 1;
+}
+.pipe-num {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem; font-weight: 800; margin: 0 auto 0.6rem;
+}
+.pipe-name { font-size: 0.78rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem; }
+.pipe-detail { font-size: 0.68rem; color: var(--text-muted); line-height: 1.4; }
+.pipe-tech { font-size: 0.65rem; color: var(--accent-cyan); font-family: var(--font-mono); margin-top: 0.4rem; }
+
+/* ── SEMANTIC ID VISUAL ── */
+.semantic-tree {
+  display: flex; flex-direction: column; gap: 0.5rem;
+  margin: 1.5rem 0;
+  font-family: var(--font-mono); font-size: 0.82rem;
+}
+.tree-row { display: flex; align-items: center; gap: 1rem; }
+.tree-label {
+  padding: 6px 14px; border-radius: 8px; font-weight: 600;
+  white-space: nowrap; min-width: 100px; text-align: center;
+}
+.t1 { background: rgba(139,92,246,0.2); color: #c4b5fd; border: 1px solid rgba(139,92,246,0.3); }
+.t2 { background: rgba(59,130,246,0.15); color: #93c5fd; border: 1px solid rgba(59,130,246,0.25); }
+.t3 { background: rgba(6,182,212,0.12); color: #67e8f9; border: 1px solid rgba(6,182,212,0.2); }
+.t4 { background: rgba(16,185,129,0.12); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.2); }
+.tree-arrow { color: var(--text-muted); }
+.tree-info { font-size: 0.75rem; color: var(--text-muted); }
+
+/* ── BADGE STATS ── */
+.stat-row { display: flex; flex-wrap: wrap; gap: 1rem; margin: 1.5rem 0; }
+.stat-pill {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 16px; border-radius: 30px;
+  border: 1px solid var(--border); background: var(--bg-card);
+}
+.stat-pill-val { font-size: 1rem; font-weight: 800; color: var(--accent-purple); }
+.stat-pill-lbl { font-size: 0.72rem; color: var(--text-secondary); }
+
+/* ── XAI VISUAL ── */
+.shap-bar-wrap { margin: 1rem 0; }
+.shap-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.6rem; }
+.shap-name { font-size: 0.78rem; font-family: var(--font-mono); color: var(--text-secondary); min-width: 110px; }
+.shap-bar-bg { flex: 1; height: 10px; border-radius: 5px; background: rgba(255,255,255,0.06); overflow: hidden; }
+.shap-bar { height: 100%; border-radius: 5px; transition: width .8s ease; }
+.shap-bar.pos { background: linear-gradient(90deg, var(--accent-emerald), #34d399); }
+.shap-bar.neg { background: linear-gradient(90deg, var(--accent-rose), #fb7185); float: right; }
+.shap-val { font-size: 0.75rem; font-family: var(--font-mono); font-weight: 600; min-width: 55px; text-align: right; }
+.shap-val.pos { color: var(--accent-emerald); }
+.shap-val.neg { color: var(--accent-rose); }
+.weight-tag {
+  font-size: 0.65rem; padding: 1px 6px; border-radius: 8px;
+  background: rgba(139,92,246,0.12); color: var(--accent-purple);
+  font-family: var(--font-mono); min-width: 36px; text-align: center;
+}
+
+/* ── CODE BLOCK ── */
+.code-block {
+  background: #0d0d14; border: 1px solid var(--border);
+  border-radius: 10px; padding: 1.2rem;
+  font-family: var(--font-mono); font-size: 0.78rem;
+  color: #c4b5fd; line-height: 1.7; overflow-x: auto;
+  margin: 1rem 0;
+}
+.code-keyword { color: #818cf8; }
+.code-string { color: #6ee7b7; }
+.code-comment { color: #4b5280; }
+.code-number { color: var(--accent-amber); }
+
+/* ── ALERT BOXES ── */
+.alert {
+  border-radius: 10px; padding: 1rem 1.25rem; margin: 1.5rem 0;
+  display: flex; gap: 0.75rem; align-items: flex-start;
+  font-size: 0.85rem; line-height: 1.6;
+}
+.alert-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+.alert-important { background: rgba(139,92,246,0.1); border: 1px solid rgba(139,92,246,0.3); color: var(--accent-purple); }
+.alert-warning { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.25); color: var(--accent-amber); }
+.alert-success { background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.25); color: var(--accent-emerald); }
+.alert-info { background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.25); color: var(--accent-blue); }
+
+/* ── FUTURE ROADMAP ── */
+.roadmap { margin-top: 2rem; }
+.roadmap-phase { margin-bottom: 1.5rem; }
+.phase-header {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.75rem 1.25rem; border-radius: 10px 10px 0 0;
+  font-weight: 700; font-size: 0.9rem;
+}
+.phase-1 .phase-header { background: rgba(139,92,246,0.15); color: var(--accent-purple); border: 1px solid rgba(139,92,246,0.25); }
+.phase-2 .phase-header { background: rgba(59,130,246,0.12); color: var(--accent-blue); border: 1px solid rgba(59,130,246,0.2); }
+.phase-3 .phase-header { background: rgba(16,185,129,0.1); color: var(--accent-emerald); border: 1px solid rgba(16,185,129,0.2); }
+.phase-items {
+  border: 1px solid var(--border); border-top: none;
+  border-radius: 0 0 10px 10px; overflow: hidden;
+}
+.phase-item {
+  display: flex; align-items: center; gap: 1rem;
+  padding: 0.8rem 1.25rem; border-bottom: 1px solid var(--border);
+  font-size: 0.83rem;
+}
+.phase-item:last-child { border-bottom: none; }
+.phase-item-icon { font-size: 1rem; flex-shrink: 0; }
+.phase-item-text { flex: 1; color: var(--text-secondary); }
+.phase-item-badge {
+  font-size: 0.68rem; padding: 2px 8px; border-radius: 8px;
+  font-family: var(--font-mono); font-weight: 600; white-space: nowrap;
+}
+.badge-purple { background: rgba(139,92,246,0.15); color: var(--accent-purple); }
+.badge-blue { background: rgba(59,130,246,0.12); color: var(--accent-blue); }
+.badge-green { background: rgba(16,185,129,0.1); color: var(--accent-emerald); }
+
+/* ── COMPARISON CARD ── */
+.compare-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 2rem; }
+.compare-card {
+  border-radius: 14px; overflow: hidden;
+  border: 1px solid var(--border);
+}
+.compare-header {
+  padding: 1rem 1.25rem; font-weight: 700; font-size: 0.9rem;
+  display: flex; align-items: center; gap: 0.5rem;
+}
+.cold-header { background: rgba(139,92,246,0.12); color: var(--accent-purple); }
+.warm-header { background: rgba(16,185,129,0.1); color: var(--accent-emerald); }
+.compare-body { padding: 1.25rem; background: var(--bg-card); }
+.compare-metric { display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0; }
+.compare-key { font-size: 0.8rem; color: var(--text-muted); }
+.compare-val { font-size: 1rem; font-weight: 700; }
+.c-purple { color: var(--accent-purple); }
+.c-emerald { color: var(--accent-emerald); }
+
+/* ── FOOTER ── */
+footer {
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border);
+  text-align: center; padding: 2.5rem 2rem;
+}
+.footer-title { font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem; }
+.footer-sub { font-size: 0.82rem; color: var(--text-muted); }
+.footer-refs { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; margin-top: 1.5rem; }
+.footer-ref {
+  font-size: 0.72rem; padding: 3px 10px; border-radius: 12px;
+  background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.reveal { opacity: 0; transform: translateY(24px); transition: opacity .6s ease, transform .6s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+
+/* ── DIVIDER ── */
+.divider { height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); margin: 3rem 0; }
+
+/* ── RESPONSIVE ── */
+@media(max-width:768px) {
+  .nav-links { display: none; }
+  .pipeline { gap: 0.75rem; }
+  .pipe-step + .pipe-step::before { display: none; }
+  .compare-wrap { grid-template-columns: 1fr; }
+  .hero-kpis { grid-template-columns: repeat(2,1fr); }
+}
+</style>
+</head>
+<body>
+
+<!-- ══════ NAV ══════ -->
+<nav id="topnav">
+  <div class="nav-brand">🍷 Wine Rec — LLM 2026</div>
+  <ul class="nav-links">
+    <li><a href="#architecture">Kiến trúc</a></li>
+    <li><a href="#semantic">Semantic IDs</a></li>
+    <li><a href="#results">Kết quả</a></li>
+    <li><a href="#xai">XAI</a></li>
+    <li><a href="#cv">CV Scanner</a></li>
+    <li><a href="#sapo">Sapo</a></li>
+    <li><a href="#scientific">Khoa học</a></li>
+    <li><a href="#roadmap">Roadmap</a></li>
+  </ul>
+  <span class="nav-badge">ĐH Tôn Đức Thắng · 2026</span>
+</nav>
+
+<!-- ══════ HERO ══════ -->
+<section id="hero">
+  <div class="hero-orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+  <div class="hero-content">
+    <div class="hero-badge">🎓 Luận văn Thạc sĩ · Khoa học Máy tính</div>
+    <h1 class="hero-title">Truy Xuất Tạo Sinh trong Hệ Gợi Ý Rượu Vang Có Khả Năng Giải Thích Sử Dụng LLM</h1>
+    <p class="hero-subtitle">Generative Retrieval for Explainable Wine Recommendation using Large Language Models</p>
+    <div class="hero-meta">
+      <div class="meta-item">👤 <span>Trần Thành Trung</span> · MSHV: 251805014</div>
+      <div class="meta-item">🎓 GVHD: <span>TS. Trần Trung Tín</span></div>
+      <div class="meta-item">🏛️ <span>Đại học Tôn Đức Thắng</span> · Khoa CNTT</div>
+      <div class="meta-item">📅 <span>2026</span></div>
+    </div>
+    <div class="hero-kpis">
+      <div class="kpi-card">
+        <div class="kpi-value">5.40<span class="kpi-unit">%</span></div>
+        <div class="kpi-label">Recall@10 (Cold-Start)</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value" style="color:var(--accent-cyan)">99.6<span class="kpi-unit">%</span></div>
+        <div class="kpi-label">Valid ID Rate</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value" style="color:var(--accent-emerald)">8.20<span class="kpi-unit">%</span></div>
+        <div class="kpi-label">Cluster Match@1</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value" style="color:var(--accent-amber)">130K</div>
+        <div class="kpi-label">Wine Reviews Dataset</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value" style="color:var(--accent-blue)">1.00</div>
+        <div class="kpi-label">CV Macro F1 (Full)</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value" style="color:var(--accent-rose)">81.3<span class="kpi-unit">%</span></div>
+        <div class="kpi-label">CF Recall@10 (Warm)</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════ TÓM TẮT ══════ -->
+<div class="section reveal" id="abstract">
+  <div class="section-tag">Tóm tắt</div>
+  <h2 class="section-title">Đề xuất & Đóng góp Chính</h2>
+  <p class="section-desc">Kiến trúc <strong style="color:var(--accent-purple)">TIGER + Price Rerank</strong> — giải pháp mới cho bài toán gợi ý rượu vang có khả năng giải thích trong điều kiện Cold-Start hoàn toàn.</p>
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-icon">🗂️</div>
+      <div class="card-title">Hierarchical Semantic IDs</div>
+      <div class="card-desc">Ánh xạ 130,000 chai rượu vang vào cây phân cấp 3 tầng K-Means (4,096 cụm hương vị). Đảm bảo tính duy nhất 100% và ngữ nghĩa phân cấp.</div>
+      <span class="card-tag">NCI · TIGER</span>
+    </div>
+    <div class="card">
+      <div class="card-icon">🧠</div>
+      <div class="card-title">LLM Fine-tuning với LoRA</div>
+      <div class="card-desc">Llama-3-8B được tinh chỉnh với LoRA r=16, 4-bit quantization. Đạt Valid ID Rate 99.60%, Cluster Match@1 8.20% trên Cold-Start.</div>
+      <span class="card-tag">LoRA · Llama-3</span>
+    </div>
+    <div class="card">
+      <div class="card-icon">🔀</div>
+      <div class="card-title">Hybrid Pipeline</div>
+      <div class="card-desc">Kết hợp LLM Cluster Filter + Price Rerank: tăng 28× Recall@10 so với greedy-only. Vượt trội mọi baseline trên bài toán Cold-Start.</div>
+      <span class="card-tag">Pipeline · Reranking</span>
+    </div>
+    <div class="card">
+      <div class="card-icon">🔍</div>
+      <div class="card-title">Dual-XAI Framework</div>
+      <div class="card-desc">SHAP linear attribution (<1ms) + Attention Highlights từ LLM. Hai lớp giải thích độc lập, trung thực về phạm vi khoa học.</div>
+      <span class="card-tag">SHAP · Attention</span>
+    </div>
+    <div class="card">
+      <div class="card-icon">📷</div>
+      <div class="card-title">CV Wine Scanner</div>
+      <div class="card-desc">Pipeline 4 tầng: YOLO → Florence-2 OCR → LLM Parser → Fuzzy Match. Macro F1 = 1.0000 với cấu hình đầy đủ.</div>
+      <span class="card-tag">YOLO · Florence-2</span>
+    </div>
+    <div class="card">
+      <div class="card-icon">🇻🇳</div>
+      <div class="card-title">Sapo Ablation Study</div>
+      <div class="card-desc">Dữ liệu thực tế Việt Nam (305 SP, 400 KH). CF đạt 81.33% Recall@10 khi có user history — xác nhận nguyên tắc thiết kế.</div>
+      <span class="card-tag">Sapo · CF · Cross-domain</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ ARCHITECTURE ══════ -->
+<div class="section-full" id="architecture">
+  <div class="section-inner reveal">
+    <div class="section-tag">Kiến trúc</div>
+    <h2 class="section-title">Pipeline Hệ thống Đa tầng</h2>
+    <p class="section-desc">FastAPI server tích hợp ChromaDB, GNN LightGCN, SHAP XAI, và CV Scanner thành một hệ thống thống nhất.</p>
+    <div style="margin-top:2.5rem; display:flex; flex-wrap:wrap; gap:1.5rem; align-items:stretch;">
+      <!-- Text Query Path -->
+      <div style="flex:2; min-width:340px;">
+        <div class="chart-title">📝 Text Query Path</div>
+        <div class="pipeline" style="gap:0.5rem; flex-direction:column;">
+          <div class="pipe-step" style="text-align:left; padding:1rem 1.25rem;">
+            <div style="display:flex;align-items:center;gap:0.75rem;">
+              <div class="pipe-num">1</div>
+              <div>
+                <div class="pipe-name">Intent Detection</div>
+                <div class="pipe-detail">Phân biệt greeting / thanks / wine query</div>
+              </div>
+            </div>
+          </div>
+          <div style="text-align:center;color:var(--accent-purple);font-size:1.2rem;margin:-4px 0">↓</div>
+          <div class="pipe-step" style="text-align:left; padding:1rem 1.25rem;">
+            <div style="display:flex;align-items:center;gap:0.75rem;">
+              <div class="pipe-num" style="background:linear-gradient(135deg,#06b6d4,#3b82f6)">2</div>
+              <div>
+                <div class="pipe-name">LLM Profile Generation</div>
+                <div class="pipe-detail">Llama-3-8B + LoRA → Predict Semantic ID [C1-C2-C3-ITEM]</div>
+                <div class="pipe-tech">max_new_tokens=25 · constrained decoding</div>
+              </div>
+            </div>
+          </div>
+          <div style="text-align:center;color:var(--accent-purple);font-size:1.2rem;margin:-4px 0">↓</div>
+          <div class="pipe-step" style="text-align:left; padding:1rem 1.25rem; background:rgba(59,130,246,0.06);">
+            <div style="display:flex;align-items:center;gap:0.75rem;">
+              <div class="pipe-num" style="background:linear-gradient(135deg,#3b82f6,#6366f1)">3</div>
+              <div>
+                <div class="pipe-name">Hybrid Retrieval</div>
+                <div class="pipe-detail">ChromaDB (60%) + GNN LightGCN (40%) fusion</div>
+                <div class="pipe-tech">n_candidates=10 · weighted score fusion</div>
+              </div>
+            </div>
+          </div>
+          <div style="text-align:center;color:var(--accent-purple);font-size:1.2rem;margin:-4px 0">↓</div>
+          <div class="pipe-step" style="text-align:left; padding:1rem 1.25rem;">
+            <div style="display:flex;align-items:center;gap:0.75rem;">
+              <div class="pipe-num" style="background:linear-gradient(135deg,#10b981,#06b6d4)">4</div>
+              <div>
+                <div class="pipe-name">Price Rerank + RAG Explanation</div>
+                <div class="pipe-detail">Cluster filter → sort by |price_q - price_w| → LLM final response</div>
+                <div class="pipe-tech">max_new_tokens=80 · SHAP attribution · Attention XAI</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- CV Path + XAI -->
+      <div style="flex:1; min-width:280px; display:flex; flex-direction:column; gap:1rem;">
+        <div class="chart-wrap" style="flex:1;">
+          <div class="chart-title">📷 CV Wine Scanner</div>
+          <div style="font-size:0.78rem;color:var(--text-secondary);line-height:1.9;">
+            <div>① <span style="color:#c4b5fd">YOLO v8</span> — Label detection & crop</div>
+            <div>② <span style="color:#67e8f9">Florence-2</span> — VLM OCR extraction</div>
+            <div>③ <span style="color:#6ee7b7">LLM Parser</span> — JSON structured parse</div>
+            <div>④ <span style="color:#fcd34d">Fuzzy Match</span> — Catalog lookup</div>
+            <div style="margin-top:0.75rem; padding:0.5rem 0.75rem; background:rgba(16,185,129,0.1); border-radius:8px; font-weight:600; color:var(--accent-emerald);">
+              → Macro F1 = <strong>1.0000</strong> (Config D)
+            </div>
+          </div>
+        </div>
+        <div class="chart-wrap" style="flex:1;">
+          <div class="chart-title">🔍 Dual-XAI Framework</div>
+          <div style="font-size:0.78rem;color:var(--text-secondary);line-height:1.9;">
+            <div><span style="color:#c4b5fd">SHAP Layer:</span> 5-feature heuristic scorer</div>
+            <div style="padding-left:1rem;color:var(--text-muted)">φᵢ = wᵢ × (xᵢ − E[xᵢ])</div>
+            <div style="padding-left:1rem;color:var(--text-muted)">Latency &lt;1ms (closed-form)</div>
+            <div><span style="color:#67e8f9">Attention Layer:</span> LLM token focus</div>
+            <div style="padding-left:1rem;color:var(--text-muted)">Last-layer mean-head attn</div>
+            <div style="padding-left:1rem;color:var(--text-muted)">Latency ~300ms (forward pass)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Module table -->
+    <div class="table-wrap" style="margin-top:2rem;">
+      <table>
+        <thead><tr><th>Module</th><th>File</th><th>Công nghệ</th><th>Trạng thái</th></tr></thead>
+        <tbody>
+          <tr><td>RAG Server</td><td style="font-family:var(--font-mono);color:var(--accent-cyan)">src/inference_rag.py</td><td>FastAPI · ChromaDB · PyTorch</td><td style="color:var(--accent-emerald)">✅ Hoàn chỉnh</td></tr>
+          <tr><td>Fine-Tune</td><td style="font-family:var(--font-mono);color:var(--accent-cyan)">src/fine_tune.py</td><td>Llama-3-8B · LoRA · Unsloth</td><td style="color:var(--accent-emerald)">✅ Hoàn chỉnh</td></tr>
+          <tr><td>SHAP XAI</td><td style="font-family:var(--font-mono);color:var(--accent-cyan)">src/xai_shap.py</td><td>SHAP KernelExplainer (linear)</td><td style="color:var(--accent-emerald)">✅ Hoàn chỉnh</td></tr>
+          <tr><td>Attention XAI</td><td style="font-family:var(--font-mono);color:var(--accent-cyan)">src/attention_xai.py</td><td>Transformer last-layer attention</td><td style="color:var(--accent-emerald)">✅ Hoàn chỉnh</td></tr>
+          <tr><td>CV Scanner</td><td style="font-family:var(--font-mono);color:var(--accent-cyan)">src/cv_wine.py</td><td>YOLO v8 · EasyOCR · Florence-2</td><td style="color:var(--accent-emerald)">✅ Hoàn chỉnh</td></tr>
+          <tr><td>GNN Retrieval</td><td style="font-family:var(--font-mono);color:var(--accent-cyan)">src/gnn_retrieval.py</td><td>LightGCN · TF-IDF SVD</td><td style="color:var(--accent-emerald)">✅ Hoàn chỉnh</td></tr>
+          <tr><td>Data Prep</td><td style="font-family:var(--font-mono);color:var(--accent-cyan)">src/data_prep.py</td><td>K-Means phân cấp · TF-IDF</td><td style="color:var(--accent-emerald)">✅ Hoàn chỉnh</td></tr>
+          <tr><td>Demo UI</td><td style="font-family:var(--font-mono);color:var(--accent-cyan)">demo/app.py</td><td>Flask · BM25 · CF · SVD</td><td style="color:var(--accent-emerald)">✅ Hoàn chỉnh</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ SEMANTIC IDs ══════ -->
+<div class="section reveal" id="semantic">
+  <div class="section-tag">Semantic IDs</div>
+  <h2 class="section-title">Hierarchical Semantic ID Design</h2>
+  <p class="section-desc">K-Means phân cấp 3 tầng trên không gian TF-IDF/SVD 128 chiều — ánh xạ 130,000 chai rượu vào 4,096 cụm hương vị.</p>
+
+  <div class="grid-2">
+    <div>
+      <div class="semantic-tree">
+        <div class="tree-row">
+          <div class="tree-label t1">C1 (×16)</div>
+          <div class="tree-arrow">→</div>
+          <div class="tree-info">Nhóm vùng/giống chính <span style="color:var(--accent-purple)">e.g. "Bold Reds"</span></div>
+        </div>
+        <div class="tree-row" style="padding-left:1.5rem;">
+          <div class="tree-label t2">C2 (×256)</div>
+          <div class="tree-arrow">→</div>
+          <div class="tree-info">Nhóm hương vị trung gian <span style="color:#93c5fd">e.g. "Napa Cab"</span></div>
+        </div>
+        <div class="tree-row" style="padding-left:3rem;">
+          <div class="tree-label t3">C3 (×4,096)</div>
+          <div class="tree-arrow">→</div>
+          <div class="tree-info">Nhóm chi tiết <span style="color:#67e8f9">~170 chai/cụm</span></div>
+        </div>
+        <div class="tree-row" style="padding-left:4.5rem;">
+          <div class="tree-label t4">ITEM (unique)</div>
+          <div class="tree-arrow">→</div>
+          <div class="tree-info">Chai cụ thể <span style="color:#6ee7b7">100% unique</span></div>
+        </div>
+      </div>
+      <div class="code-block">
+<span class="code-comment"># Ví dụ Semantic ID</span>
+ID = <span class="code-string">"[07-11-03-042]"</span>
+<span class="code-comment"># C1=07 → Nhóm vùng Bold Reds</span>
+<span class="code-comment"># C2=11 → Napa Valley style</span>
+<span class="code-comment"># C3=03 → Cabernet cluster</span>
+<span class="code-comment"># ITEM=042 → Chai cụ thể #42</span>
+
+<span class="code-comment"># LLM generates:</span>
+<span class="code-keyword">output</span> = <span class="code-string">"I suggest the [07-11-03-042].
+This Napa Cabernet Sauvignon..."</span>
+      </div>
+    </div>
+    <div>
+      <div class="chart-wrap">
+        <div class="chart-title">📊 Thống kê Semantic ID Space</div>
+        <div class="stat-row" style="flex-direction:column; gap:0.75rem;">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:0.6rem 0;border-bottom:1px solid var(--border);">
+            <span style="font-size:0.82rem;color:var(--text-secondary)">Tổng số chai rượu</span>
+            <span style="font-weight:700;color:var(--text-primary)">129,907</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:0.6rem 0;border-bottom:1px solid var(--border);">
+            <span style="font-size:0.82rem;color:var(--text-secondary)">Số cụm tầng 3 (C3)</span>
+            <span style="font-weight:700;color:var(--accent-cyan)">4,096</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:0.6rem 0;border-bottom:1px solid var(--border);">
+            <span style="font-size:0.82rem;color:var(--text-secondary)">Kích thước cụm TB</span>
+            <span style="font-weight:700;color:var(--text-primary)">170.5 items</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:0.6rem 0;border-bottom:1px solid var(--border);">
+            <span style="font-size:0.82rem;color:var(--text-secondary)">Valid ID Rate</span>
+            <span style="font-weight:700;color:var(--accent-emerald)">99.60%</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:0.6rem 0;border-bottom:1px solid var(--border);">
+            <span style="font-size:0.82rem;color:var(--text-secondary)">Cluster Match@1</span>
+            <span style="font-weight:700;color:var(--accent-purple)">8.20%</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:0.6rem 0;">
+            <span style="font-size:0.82rem;color:var(--text-secondary)">Exact Match@1 (Full ID)</span>
+            <span style="font-weight:700;color:var(--text-secondary)">0.20%</span>
+          </div>
+        </div>
+        <div class="alert alert-important" style="margin-top:1rem;">
+          <div class="alert-icon">⚡</div>
+          <div>Cluster Match@1 = <strong>8.20%</strong> gấp <strong>41×</strong> Exact Match → LLM học được semantic structure phân cấp ngay cả với Cold-Start hoàn toàn</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ RESULTS ══════ -->
+<div class="section-full" id="results">
+  <div class="section-inner reveal">
+    <div class="section-tag">Kết quả Thực nghiệm</div>
+    <h2 class="section-title">So sánh Toàn diện — 500 mẫu Cold-Start</h2>
+    <p class="section-desc">Proposed Hybrid vượt trội trên tất cả thước đo, đặc biệt MRR tăng 1.83× so với BM25+ Enhanced.</p>
+
+    <div class="grid-2" style="margin-top:2.5rem;">
+      <div class="chart-wrap">
+        <div class="chart-title">Recall@K — So sánh các phương pháp</div>
+        <div class="chart-sub">N=500 mẫu kiểm thử Cold-Start hoàn toàn</div>
+        <canvas id="recallChart" height="280"></canvas>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title">NDCG@10 & MRR — Chất lượng Xếp hạng</div>
+        <div class="chart-sub">Proposed Hybrid vượt trội ở ranking quality</div>
+        <canvas id="ndcgChart" height="280"></canvas>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Phương pháp</th>
+            <th>Recall@1</th><th>Recall@5</th><th>Recall@10</th>
+            <th>NDCG@10</th><th>MRR</th><th>Latency</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>TF-IDF CF</td><td>0.00%</td><td>0.80%</td><td>1.80%</td><td>0.79%</td><td>0.48%</td><td>1.4ms</td></tr>
+          <tr><td>BM25</td><td>0.60%</td><td>1.40%</td><td>2.60%</td><td>1.34%</td><td>0.97%</td><td>238ms</td></tr>
+          <tr><td>BM25+ Enhanced</td><td>0.80%</td><td>2.40%</td><td>3.80%</td><td>2.01%</td><td>1.48%</td><td>339ms</td></tr>
+          <tr><td>Struct-Filter BM25</td><td>0.60%</td><td>1.40%</td><td>2.60%</td><td>1.34%</td><td>0.97%</td><td>246ms</td></tr>
+          <tr><td>GNN-Filter</td><td>0.20%</td><td>0.80%</td><td>1.20%</td><td>0.58%</td><td>0.39%</td><td>97ms</td></tr>
+          <tr><td>TIGER Greedy (no rerank)</td><td>0.20%</td><td>0.20%</td><td>0.20%</td><td>0.20%</td><td>0.20%</td><td>2,278ms</td></tr>
+          <tr class="highlight-row">
+            <td>★ Proposed Hybrid (TIGER + Price Rerank)</td>
+            <td class="best">1.60%</td><td class="best">4.40%</td><td class="best">5.60%</td>
+            <td class="best">3.40%</td><td class="best">2.71%</td><td>2,278ms</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid-3" style="margin-top:2rem;">
+      <div class="alert alert-success">
+        <div class="alert-icon">📈</div>
+        <div>Recall@1: <strong>1.60%</strong> — gấp <strong>2.0×</strong> BM25+ Enhanced</div>
+      </div>
+      <div class="alert alert-success">
+        <div class="alert-icon">📈</div>
+        <div>Recall@10: <strong>5.60%</strong> — gấp <strong>1.47×</strong> BM25+ Enhanced</div>
+      </div>
+      <div class="alert alert-success">
+        <div class="alert-icon">📈</div>
+        <div>TIGER Greedy → Hybrid: <strong>27×</strong> Recall@10 improvement</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ ABLATION ══════ -->
+<div class="section reveal">
+  <div class="section-tag">Ablation Study</div>
+  <h2 class="section-title">Đóng góp Từng Thành phần Pipeline</h2>
+  <p class="section-desc">Price Rerank là thành phần quan trọng nhất: đóng góp +5.00% Recall@10 so với chỉ dùng Cluster.</p>
+  <div class="grid-2" style="margin-top:2rem;">
+    <div class="chart-wrap">
+      <div class="chart-title">Ablation — Recall@10 theo Variant</div>
+      <canvas id="ablationChart" height="260"></canvas>
+    </div>
+    <div>
+      <div class="table-wrap" style="margin-top:0;">
+        <table>
+          <thead><tr><th>Variant</th><th>Recall@1</th><th>Recall@10</th><th>NDCG@10</th></tr></thead>
+          <tbody>
+            <tr><td>A1: LLM Greedy only</td><td>0.20%</td><td>0.20%</td><td>0.20%</td></tr>
+            <tr><td>A2: Cluster + Random rank</td><td>~0.10%</td><td>~2.10%</td><td>~0.89%</td></tr>
+            <tr class="highlight-row"><td>A3: Cluster + Price <span style="color:var(--accent-amber)">(Ours)</span></td><td class="best">1.60%</td><td class="best">5.40%</td><td class="best">3.32%</td></tr>
+            <tr><td>A4: Cluster + TF-IDF</td><td>~0.60%</td><td>~3.60%</td><td>~1.85%</td></tr>
+            <tr><td>A5: Global Price (no cluster)</td><td>~0.40%</td><td>~2.80%</td><td>~1.40%</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:1.5rem;">
+        <div style="font-size:0.85rem;font-weight:700;color:var(--text-primary);margin-bottom:1rem;">Đóng góp từng thành phần (Recall@10):</div>
+        <div style="display:flex;flex-direction:column;gap:0.6rem;">
+          <div style="display:flex;align-items:center;gap:1rem;">
+            <div style="font-size:0.78rem;color:var(--text-muted);min-width:150px;">Cluster Filter</div>
+            <div style="flex:1;height:8px;border-radius:4px;background:rgba(255,255,255,0.06);overflow:hidden;">
+              <div style="width:36.3%;height:100%;background:linear-gradient(90deg,#8b5cf6,#6366f1);border-radius:4px;"></div>
+            </div>
+            <div style="font-size:0.78rem;color:var(--accent-purple);font-weight:700;min-width:50px;">+1.90%</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:1rem;">
+            <div style="font-size:0.78rem;color:var(--text-muted);min-width:150px;">Price Rerank</div>
+            <div style="flex:1;height:8px;border-radius:4px;background:rgba(255,255,255,0.06);overflow:hidden;">
+              <div style="width:63.7%;height:100%;background:linear-gradient(90deg,#10b981,#06b6d4);border-radius:4px;"></div>
+            </div>
+            <div style="font-size:0.78rem;color:var(--accent-emerald);font-weight:700;min-width:50px;">+3.30%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ XAI ══════ -->
+<div class="section-full" id="xai">
+  <div class="section-inner reveal">
+    <div class="section-tag">Explainability</div>
+    <h2 class="section-title">Dual-XAI Framework</h2>
+    <p class="section-desc">Hai lớp giải thích độc lập, mỗi lớp giải thích một khía cạnh khác nhau của hệ thống. Trung thực về phạm vi khoa học.</p>
+    <div class="grid-2" style="margin-top:2rem;">
+      <!-- SHAP -->
+      <div class="chart-wrap">
+        <div class="chart-title">Layer 1 — SHAP Heuristic Attribution</div>
+        <div class="chart-sub">Giải thích hàm điểm 5-feature thủ công. Exact linear SHAP: φᵢ = wᵢ × (xᵢ − E[xᵢ])</div>
+        <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:1rem;font-family:var(--font-mono)">
+          Query: "Cabernet from US under $45 for steak dinner"<br>
+          Wine: Jordan 2016 Cabernet Sauvignon ($47)
+        </div>
+        <div class="shap-bar-wrap">
+          <div class="shap-row">
+            <div class="shap-name">region_match</div>
+            <div class="weight-tag">w=0.15</div>
+            <div class="shap-bar-bg"><div class="shap-bar pos" style="width:100%"></div></div>
+            <div class="shap-val pos">+0.150</div>
+          </div>
+          <div class="shap-row">
+            <div class="shap-name">style_match</div>
+            <div class="weight-tag">w=0.25</div>
+            <div class="shap-bar-bg"><div class="shap-bar pos" style="width:55%"></div></div>
+            <div class="shap-val pos">+0.082</div>
+          </div>
+          <div class="shap-row">
+            <div class="shap-name">price_match</div>
+            <div class="weight-tag">w=0.30</div>
+            <div class="shap-bar-bg"><div class="shap-bar pos" style="width:30%"></div></div>
+            <div class="shap-val pos">+0.045</div>
+          </div>
+          <div class="shap-row">
+            <div class="shap-name">pairing_match</div>
+            <div class="weight-tag">w=0.20</div>
+            <div class="shap-bar-bg"><div class="shap-bar pos" style="width:21%"></div></div>
+            <div class="shap-val pos">+0.031</div>
+          </div>
+          <div class="shap-row">
+            <div class="shap-name">semantic_sim</div>
+            <div class="weight-tag">w=0.10</div>
+            <div class="shap-bar-bg"></div>
+            <div class="shap-val" style="color:var(--text-muted)">±0.000</div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding-top:0.75rem;border-top:1px solid var(--border);font-size:0.78rem;">
+          <span style="color:var(--text-muted)">Base value: 0.325</span>
+          <span style="color:var(--accent-emerald)">Final score: 0.633</span>
+          <span style="color:var(--accent-purple)">Latency: &lt;1ms</span>
+        </div>
+        <div class="alert alert-warning" style="margin-top:1rem;font-size:0.78rem;">
+          <div class="alert-icon">⚠️</div>
+          <div>SHAP giải thích hàm heuristic thủ công — <strong>KHÔNG</strong> giải thích LLM hoặc ChromaDB ranking</div>
+        </div>
+      </div>
+      <!-- Attention -->
+      <div class="chart-wrap">
+        <div class="chart-title">Layer 2 — Attention Highlights (LLM Internals)</div>
+        <div class="chart-sub">Token importance từ last Transformer layer. Hiển thị LLM "nhìn vào" đâu.</div>
+        <div style="font-family:var(--font-mono);font-size:0.78rem;color:var(--text-muted);margin-bottom:1rem;">
+          Prompt: "Recommend wine: Cabernet from California $45..."
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:1rem;">
+          <span style="background:rgba(139,92,246,0.5);padding:3px 10px;border-radius:6px;font-size:0.78rem;font-family:var(--font-mono);font-weight:600">Cabernet<sup style="font-size:0.6em">0.084</sup></span>
+          <span style="background:rgba(139,92,246,0.4);padding:3px 10px;border-radius:6px;font-size:0.78rem;font-family:var(--font-mono)">California<sup style="font-size:0.6em">0.073</sup></span>
+          <span style="background:rgba(139,92,246,0.35);padding:3px 10px;border-radius:6px;font-size:0.78rem;font-family:var(--font-mono)">$45<sup style="font-size:0.6em">0.062</sup></span>
+          <span style="background:rgba(139,92,246,0.25);padding:3px 10px;border-radius:6px;font-size:0.78rem;font-family:var(--font-mono)">steak<sup style="font-size:0.6em">0.051</sup></span>
+          <span style="background:rgba(139,92,246,0.2);padding:3px 10px;border-radius:6px;font-size:0.78rem;font-family:var(--font-mono)">wine<sup style="font-size:0.6em">0.044</sup></span>
+          <span style="background:rgba(139,92,246,0.15);padding:3px 10px;border-radius:6px;font-size:0.78rem;font-family:var(--font-mono)">bold<sup style="font-size:0.6em">0.038</sup></span>
+          <span style="background:rgba(139,92,246,0.1);padding:3px 10px;border-radius:6px;font-size:0.78rem;font-family:var(--font-mono)">dinner<sup style="font-size:0.6em">0.031</sup></span>
+        </div>
+        <div style="font-size:0.78rem;color:var(--text-secondary);line-height:1.7;margin-top:0.75rem;">
+          <strong style="color:var(--text-primary)">Nhận xét:</strong> LLM tập trung nhiều nhất vào <span style="color:#c4b5fd">Cabernet</span> (variety), <span style="color:#93c5fd">California</span> (region), và <span style="color:#fcd34d">$45</span> (price) — khớp với các semantic features quan trọng nhất trong SHAP attribution.
+        </div>
+        <div style="display:flex;gap:1rem;margin-top:1rem;padding-top:0.75rem;border-top:1px solid var(--border);">
+          <span style="font-size:0.78rem;color:var(--text-muted)">Total tokens: 48</span>
+          <span style="font-size:0.78rem;color:var(--accent-purple)">Latency: ~312ms</span>
+          <span style="font-size:0.78rem;color:var(--text-muted)">Layer: 31 (last)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ CV PIPELINE ══════ -->
+<div class="section reveal" id="cv">
+  <div class="section-tag">Computer Vision</div>
+  <h2 class="section-title">Wine Label Scanner — CV Pipeline</h2>
+  <p class="section-desc">Pipeline 4 tầng nhận dạng nhãn chai rượu từ ảnh chụp, tra cứu catalog, và trả về tasting notes.</p>
+  <div class="grid-2" style="margin-top:2rem;">
+    <div class="chart-wrap">
+      <div class="chart-title">📊 Kết quả Ablation CV Pipeline</div>
+      <canvas id="cvChart" height="260"></canvas>
+    </div>
+    <div>
+      <div class="table-wrap" style="margin-top:0;">
+        <table>
+          <thead><tr><th>Config</th><th>YOLO</th><th>OCR</th><th>LLM</th><th>Macro F1</th><th>Latency</th></tr></thead>
+          <tbody>
+            <tr><td>A (Baseline)</td><td>✓</td><td>EasyOCR</td><td>✗</td><td>0.7257</td><td>1,885ms</td></tr>
+            <tr><td>B</td><td>✓</td><td>Florence-2</td><td>✗</td><td>0.8156</td><td>1,144ms</td></tr>
+            <tr><td>C</td><td>✗</td><td>Florence-2</td><td>✗</td><td>0.8156</td><td>981ms</td></tr>
+            <tr class="highlight-row"><td>D (Full) ★</td><td>✓</td><td>Florence-2</td><td>✓</td><td class="best">1.0000</td><td>1,048ms</td></tr>
+            <tr class="highlight-row"><td>E</td><td>✗</td><td>Florence-2</td><td>✓</td><td class="best">1.0000</td><td>1,040ms</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:1.5rem;">
+        <div style="font-size:0.85rem;font-weight:700;color:var(--text-primary);margin-bottom:1rem;">Đóng góp từng thành phần (Δ Macro F1):</div>
+        <div style="display:flex;flex-direction:column;gap:0.6rem;">
+          <div style="display:flex;align-items:center;gap:0.75rem;">
+            <div style="width:14px;height:14px;border-radius:3px;background:var(--accent-blue);flex-shrink:0;"></div>
+            <div style="font-size:0.82rem;color:var(--text-secondary);flex:1">Florence-2 vs EasyOCR</div>
+            <div style="font-size:0.82rem;color:var(--accent-blue);font-weight:700">+8.99%</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.75rem;">
+            <div style="width:14px;height:14px;border-radius:3px;background:var(--accent-purple);flex-shrink:0;"></div>
+            <div style="font-size:0.82rem;color:var(--text-secondary);flex:1">LLM Parser (critical)</div>
+            <div style="font-size:0.82rem;color:var(--accent-purple);font-weight:700">+18.44%</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.75rem;">
+            <div style="width:14px;height:14px;border-radius:3px;background:var(--accent-emerald);flex-shrink:0;"></div>
+            <div style="font-size:0.82rem;color:var(--text-secondary);flex:1">Full vs Baseline (Total)</div>
+            <div style="font-size:0.82rem;color:var(--accent-emerald);font-weight:700">+27.43%</div>
+          </div>
+        </div>
+      </div>
+      <div class="alert alert-info" style="margin-top:1rem;font-size:0.82rem;">
+        <div class="alert-icon">💡</div>
+        <div>LLM Parser là thành phần tạo bước nhảy vọt lớn nhất: 0.8156 → <strong>1.0000</strong> Macro F1. YOLO không cần thiết khi đã có LLM.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ SAPO ══════ -->
+<div class="section-full" id="sapo">
+  <div class="section-inner reveal">
+    <div class="section-tag">Sapo Ablation</div>
+    <h2 class="section-title">Dữ liệu Thực tế Việt Nam — Sapo Store</h2>
+    <p class="section-desc">305 sản phẩm · 400 khách hàng · 980 đơn hàng. Kiểm chứng tính tổng quát và nguyên tắc thiết kế hệ thống.</p>
+
+    <div class="compare-wrap" style="margin-top:2rem;">
+      <div class="compare-card">
+        <div class="compare-header cold-header">❄️ Cold-Start — Winemag (130K)</div>
+        <div class="compare-body">
+          <div class="compare-metric"><span class="compare-key">Dataset</span><span class="compare-val c-purple">130,000 SP</span></div>
+          <div class="compare-metric"><span class="compare-key">User History</span><span class="compare-val" style="color:var(--accent-rose)">❌ Không có</span></div>
+          <div class="compare-metric"><span class="compare-key">Best Method</span><span class="compare-val c-purple">TIGER + Price Rerank</span></div>
+          <div class="compare-metric"><span class="compare-key">Recall@10</span><span class="compare-val c-purple">5.40%</span></div>
+          <div class="compare-metric"><span class="compare-key">Ngôn ngữ</span><span class="compare-val" style="color:var(--text-secondary)">English</span></div>
+        </div>
+      </div>
+      <div class="compare-card">
+        <div class="compare-header warm-header">☀️ Warm-Start — Sapo (Vietnam)</div>
+        <div class="compare-body">
+          <div class="compare-metric"><span class="compare-key">Dataset</span><span class="compare-val c-emerald">305 SP</span></div>
+          <div class="compare-metric"><span class="compare-key">User History</span><span class="compare-val c-emerald">✅ 733 interactions</span></div>
+          <div class="compare-metric"><span class="compare-key">Best Method</span><span class="compare-val c-emerald">Collaborative Filtering</span></div>
+          <div class="compare-metric"><span class="compare-key">Recall@10</span><span class="compare-val c-emerald">81.33%</span></div>
+          <div class="compare-metric"><span class="compare-key">Ngôn ngữ</span><span class="compare-val" style="color:var(--text-secondary)">Tiếng Việt 🇻🇳</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-top:1.5rem;">
+      <div class="chart-wrap">
+        <div class="chart-title">Sapo — So sánh 5 phương pháp (Recall@10)</div>
+        <canvas id="sapoChart" height="260"></canvas>
+      </div>
+      <div>
+        <div class="chart-wrap">
+          <div class="chart-title">Phát hiện then chốt: CF vs Content-Only</div>
+          <div style="margin-top:1rem;">
+            <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;">
+              <div style="flex:1;">
+                <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:4px;">Content TF-IDF (no history)</div>
+                <div style="height:20px;border-radius:4px;background:rgba(255,255,255,0.06);overflow:hidden;position:relative;">
+                  <div style="width:2.3%;height:100%;background:var(--accent-blue);border-radius:4px;"></div>
+                  <span style="position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:0.7rem;color:var(--text-muted)">1.33%</span>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;">
+              <div style="flex:1;">
+                <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:4px;">Collaborative Filtering (with history)</div>
+                <div style="height:20px;border-radius:4px;background:rgba(255,255,255,0.06);overflow:hidden;position:relative;">
+                  <div style="width:100%;height:100%;background:linear-gradient(90deg,var(--accent-emerald),#34d399);border-radius:4px;"></div>
+                  <span style="position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:0.7rem;color:#064e3b;font-weight:700">56.00% Recall@1</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="alert alert-important" style="margin-top:0.75rem;font-size:0.82rem;">
+            <div class="alert-icon">⚡</div>
+            <div>User history cải thiện Recall@10: <strong>18.67% → 81.33%</strong> (+<strong>14.5×</strong>)</div>
+          </div>
+        </div>
+        <div style="margin-top:1rem; background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:1.25rem;">
+          <div style="font-size:0.85rem;font-weight:700;color:var(--text-primary);margin-bottom:0.75rem;">🧭 Nguyên tắc Thiết kế Hệ thống:</div>
+          <div style="font-size:0.82rem;line-height:1.8;color:var(--text-secondary);">
+            <div style="padding:0.4rem 0.75rem;margin-bottom:0.5rem;border-radius:6px;background:rgba(139,92,246,0.08);border-left:3px solid var(--accent-purple);">
+              <strong style="color:var(--accent-purple)">Cold-Start</strong> (no user data) → <strong>TIGER + Semantic Filter</strong>
+            </div>
+            <div style="padding:0.4rem 0.75rem;border-radius:6px;background:rgba(16,185,129,0.06);border-left:3px solid var(--accent-emerald);">
+              <strong style="color:var(--accent-emerald)">Warm-Start</strong> (with history) → <strong>Collaborative Filtering</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ SCIENTIFIC ALIGNMENT ══════ -->
+<div class="section reveal" id="scientific">
+  <div class="section-tag">Phân tích Khoa học</div>
+  <h2 class="section-title">Đánh giá theo 3 Góc độ Nghiên cứu Tiên tiến</h2>
+  <p class="section-desc">Phân tích hiện trạng và hướng nâng cấp dựa trên 3 hướng nghiên cứu được đề xuất bởi hội đồng.</p>
+  <div class="grid-3" style="margin-top:2rem;">
+    <div class="card">
+      <div class="card-icon">💬</div>
+      <div class="card-title">1. Conversational RS + Knowledge-based RS</div>
+      <div class="card-desc">
+        <strong style="color:var(--accent-emerald)">Đã có:</strong> Intent detection, conversation history, LLM sommelier role, NL query understanding.<br><br>
+        <strong style="color:var(--accent-amber)">Thiếu:</strong> Knowledge Graph (KG), multi-step reasoning, state management giữa các turn.<br><br>
+        <strong style="color:var(--accent-cyan)">Hướng:</strong> KGTORe / MKGAT — liên kết Wine → Country → Region → Variety → Flavor Profile
+      </div>
+      <span class="card-tag">KGTORe · MKGAT · CRS</span>
+    </div>
+    <div class="card">
+      <div class="card-icon">🕸️</div>
+      <div class="card-title">2. Item-Item Graph (LATTICE / FREEDOM)</div>
+      <div class="card-desc">
+        <strong style="color:var(--accent-emerald)">Đã có:</strong> LightGCN embeddings (66MB), TF-IDF→SVD projection, hybrid ChromaDB+GNN (60/40 fusion).<br><br>
+        <strong style="color:var(--accent-amber)">Thiếu:</strong> Co-purchase graph từ interaction data, modality-aware edge weighting.<br><br>
+        <strong style="color:var(--accent-cyan)">Hướng:</strong> Sapo data → item-item graph từ co-purchase patterns → LATTICE-style training
+      </div>
+      <span class="card-tag">LightGCN · LATTICE · FREEDOM</span>
+    </div>
+    <div class="card">
+      <div class="card-icon">🖼️</div>
+      <div class="card-title">3. Multimodal RS (Vision + Text)</div>
+      <div class="card-desc">
+        <strong style="color:var(--accent-emerald)">Đã có:</strong> YOLO label detection, Florence-2 OCR, CLIP embedding trong code, visual catalog matching.<br><br>
+        <strong style="color:var(--accent-amber)">Thiếu:</strong> CLIP visual embedding tích hợp vào ranking score (chỉ dùng cho catalog lookup).<br><br>
+        <strong style="color:var(--accent-cyan)">Hướng:</strong> Align text query ↔ wine label image → find visually-similar alternatives
+      </div>
+      <span class="card-tag">CLIP · Florence-2 · MRS</span>
+    </div>
+  </div>
+
+  <div class="alert alert-success" style="margin-top:2rem;">
+    <div class="alert-icon">✅</div>
+    <div style="line-height:1.7;">
+      <strong>Tóm tắt:</strong> Dự án đã đặt nền tảng kỹ thuật vững chắc cho cả 3 hướng nghiên cứu. Các module CV (Florence-2 + CLIP), GNN (LightGCN), và LLM (Llama-3 + conversation history) đều đã hiện diện và hoạt động — chỉ cần deepening integration để tiến từ MVP lên state-of-the-art.
+    </div>
+  </div>
+</div>
+
+<!-- ══════ ROADMAP ══════ -->
+<div class="section-full" id="roadmap">
+  <div class="section-inner reveal">
+    <div class="section-tag">Hướng Phát triển</div>
+    <h2 class="section-title">Lộ trình Nâng cấp 3 Giai đoạn</h2>
+    <p class="section-desc">Từ MVP hiện tại đến hệ thống state-of-the-art tích hợp CRS + Graph + Multimodal.</p>
+    <div class="roadmap" style="margin-top:2rem;">
+      <div class="roadmap-phase phase-1">
+        <div class="phase-header">⚡ Giai đoạn 1 — Ngắn hạn (1–3 tháng)</div>
+        <div class="phase-items">
+          <div class="phase-item">
+            <div class="phase-item-icon">🔍</div>
+            <div class="phase-item-text">Beam Search Hybrid — lấy top-3 clusters, merge candidates trước khi rerank → kỳ vọng Recall@10 = 8–10%</div>
+            <div class="phase-item-badge badge-purple">Constrained Beam</div>
+          </div>
+          <div class="phase-item">
+            <div class="phase-item-icon">🏆</div>
+            <div class="phase-item-text">Multi-feature Reranker — kết hợp price + BERT similarity + wine points score</div>
+            <div class="phase-item-badge badge-purple">NDCG@10 +30%</div>
+          </div>
+          <div class="phase-item">
+            <div class="phase-item-icon">⚡</div>
+            <div class="phase-item-text">GPTQ/AWQ quantization — giảm LLM latency từ 2,278ms xuống &lt;500ms</div>
+            <div class="phase-item-badge badge-purple">AutoGPTQ</div>
+          </div>
+          <div class="phase-item">
+            <div class="phase-item-icon">🖼️</div>
+            <div class="phase-item-text">Tích hợp CLIP visual embedding vào ranking score — bắt đầu multimodal alignment</div>
+            <div class="phase-item-badge badge-purple">CLIP ViT-L</div>
+          </div>
+        </div>
+      </div>
+      <div class="roadmap-phase phase-2" style="margin-top:1rem;">
+        <div class="phase-header">🚀 Giai đoạn 2 — Trung hạn (3–6 tháng)</div>
+        <div class="phase-items">
+          <div class="phase-item">
+            <div class="phase-item-icon">🗺️</div>
+            <div class="phase-item-text">Knowledge Graph construction — Wine → Country → Region → Variety → Flavor → Food Pairing</div>
+            <div class="phase-item-badge badge-blue">Neo4j · KGTORe</div>
+          </div>
+          <div class="phase-item">
+            <div class="phase-item-icon">📚</div>
+            <div class="phase-item-text">User history in LLM context (in-context learning) — Warm-Start + Cold-Start unified pipeline</div>
+            <div class="phase-item-badge badge-blue">In-context Learning</div>
+          </div>
+          <div class="phase-item">
+            <div class="phase-item-icon">🕸️</div>
+            <div class="phase-item-text">Real item-item graph từ Sapo co-purchase data → LATTICE-style GNN training</div>
+            <div class="phase-item-badge badge-blue">LATTICE · FREEDOM</div>
+          </div>
+          <div class="phase-item">
+            <div class="phase-item-icon">🏭</div>
+            <div class="phase-item-text">Production deployment với vLLM + FastAPI — target latency &lt;100ms</div>
+            <div class="phase-item-badge badge-blue">vLLM · TensorRT</div>
+          </div>
+        </div>
+      </div>
+      <div class="roadmap-phase phase-3" style="margin-top:1rem;">
+        <div class="phase-header">🌟 Giai đoạn 3 — Dài hạn (6–12 tháng)</div>
+        <div class="phase-items">
+          <div class="phase-item">
+            <div class="phase-item-icon">🎨</div>
+            <div class="phase-item-text">Full CLIP multimodal alignment — visual label style + text description joint embedding space</div>
+            <div class="phase-item-badge badge-green">CLIP fine-tuned</div>
+          </div>
+          <div class="phase-item">
+            <div class="phase-item-icon">👤</div>
+            <div class="phase-item-text">Personalized semantic space — user-specific cluster weights, adaptive reranking</div>
+            <div class="phase-item-badge badge-green">Online Learning</div>
+          </div>
+          <div class="phase-item">
+            <div class="phase-item-icon">🌍</div>
+            <div class="phase-item-text">Multi-language support VI/EN/FR — mT5 + multilingual LLaMA cho global market</div>
+            <div class="phase-item-badge badge-green">mT5 · mLLaMA</div>
+          </div>
+          <div class="phase-item">
+            <div class="phase-item-icon">📊</div>
+            <div class="phase-item-text">A/B testing framework + real user validation — MLflow + LangSmith observability</div>
+            <div class="phase-item-badge badge-green">MLflow · LangSmith</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ KẾT LUẬN ══════ -->
+<div class="section reveal">
+  <div class="section-tag">Kết luận</div>
+  <h2 class="section-title">Tổng kết Đóng góp</h2>
+  <div class="grid-3" style="margin-top:2rem;">
+    <div class="chart-wrap" style="text-align:center;">
+      <div style="font-size:3rem;font-weight:900;color:var(--accent-purple);line-height:1;">5.40%</div>
+      <div style="font-size:0.9rem;font-weight:700;margin:0.5rem 0">Recall@10 Cold-Start</div>
+      <div style="font-size:0.78rem;color:var(--text-muted)">Vượt 1.42× BM25+ Enhanced. Đạt gần ceiling lý thuyết 5.87% của bài toán Cold-Start.</div>
+    </div>
+    <div class="chart-wrap" style="text-align:center;">
+      <div style="font-size:3rem;font-weight:900;color:var(--accent-cyan);line-height:1;">99.6%</div>
+      <div style="font-size:0.9rem;font-weight:700;margin:0.5rem 0">Valid ID Rate</div>
+      <div style="font-size:0.78rem;color:var(--text-muted)">Constrained decoding đảm bảo LLM luôn sinh ra Semantic ID hợp lệ với cấu trúc [C1-C2-C3-ITEM].</div>
+    </div>
+    <div class="chart-wrap" style="text-align:center;">
+      <div style="font-size:3rem;font-weight:900;color:var(--accent-emerald);line-height:1;">1.00</div>
+      <div style="font-size:0.9rem;font-weight:700;margin:0.5rem 0">CV Macro F1</div>
+      <div style="font-size:0.78rem;color:var(--text-muted)">YOLO + Florence-2 + LLM Parser đạt Macro F1 = 1.0 trên tập kiểm thử tổng hợp.</div>
+    </div>
+  </div>
+
+  <div class="alert alert-important" style="margin-top:2rem;">
+    <div class="alert-icon">🎯</div>
+    <div style="line-height:1.8;">
+      <strong>Kết luận cốt lõi:</strong> LLM có thể đóng vai trò <em>Bộ lọc Ngữ nghĩa Phân cấp</em> hiệu quả trong Cold-Start RS. Dữ liệu lịch sử người dùng cải thiện Recall@10 lên <strong>+14.5×</strong> (81.33% vs 5.60%) — khẳng định đây là tài nguyên quý giá nhất cần thu thập cho hệ thống thực tế.
+    </div>
+  </div>
+</div>
+
+<!-- ══════ FOOTER ══════ -->
+<footer>
+  <div class="footer-title">Generative Retrieval for Explainable Wine Recommendation using LLMs</div>
+  <div class="footer-sub">Trần Thành Trung · MSHV: 251805014 · ĐH Tôn Đức Thắng · 2026</div>
+  <div class="footer-refs">
+    <span class="footer-ref">TIGER (NeurIPS 2023)</span>
+    <span class="footer-ref">DSI (NeurIPS 2022)</span>
+    <span class="footer-ref">LoRA (ICLR 2022)</span>
+    <span class="footer-ref">LightGCN (SIGIR 2020)</span>
+    <span class="footer-ref">Attention Is All You Need (NeurIPS 2017)</span>
+    <span class="footer-ref">P5 (RecSys 2022)</span>
+    <span class="footer-ref">Winemag-130k (Kaggle 2017)</span>
+    <span class="footer-ref">BM25 (FnTIR 2009)</span>
+  </div>
+</footer>
+
+<script>
+// ── Chart.js global defaults ──
+Chart.defaults.color = '#a19bc9';
+Chart.defaults.font.family = "'Inter', sans-serif";
+Chart.defaults.font.size = 11;
+
+const darkGrid = { color: 'rgba(255,255,255,0.05)' };
+const tooltipStyle = {
+  backgroundColor: 'rgba(16,16,25,0.95)',
+  borderColor: 'rgba(139,92,246,0.4)',
+  borderWidth: 1,
+  titleColor: '#f1f0ff',
+  bodyColor: '#a19bc9',
+  padding: 10,
+  cornerRadius: 8
+};
+
+// ── 1. Recall Chart ──
+new Chart(document.getElementById('recallChart'), {
+  type: 'bar',
+  data: {
+    labels: ['TF-IDF CF', 'BM25', 'BM25+\nEnhanced', 'GNN-Filter', 'TIGER\nGreedy', '★ Proposed\nHybrid'],
+    datasets: [
+      {
+        label: 'Recall@1',
+        data: [0.00, 0.60, 0.80, 0.20, 0.20, 1.60],
+        backgroundColor: 'rgba(139,92,246,0.6)',
+        borderColor: '#8b5cf6', borderWidth: 1, borderRadius: 4,
+      },
+      {
+        label: 'Recall@5',
+        data: [0.80, 1.40, 2.40, 0.80, 0.20, 4.40],
+        backgroundColor: 'rgba(99,102,241,0.5)',
+        borderColor: '#6366f1', borderWidth: 1, borderRadius: 4,
+      },
+      {
+        label: 'Recall@10',
+        data: [1.80, 2.60, 3.80, 1.20, 0.20, 5.40],
+        backgroundColor: 'rgba(59,130,246,0.6)',
+        borderColor: '#3b82f6', borderWidth: 1, borderRadius: 4,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { position: 'top' }, tooltip: tooltipStyle },
+    scales: {
+      x: { grid: darkGrid },
+      y: { grid: darkGrid, title: { display: true, text: 'Recall (%)' } }
+    }
+  }
+});
+
+// ── 2. NDCG/MRR Chart ──
+new Chart(document.getElementById('ndcgChart'), {
+  type: 'bar',
+  data: {
+    labels: ['TF-IDF CF', 'BM25', 'BM25+\nEnhanced', 'GNN-Filter', 'TIGER\nGreedy', '★ Proposed\nHybrid'],
+    datasets: [
+      {
+        label: 'NDCG@10',
+        data: [0.79, 1.34, 2.01, 0.58, 0.20, 3.32],
+        backgroundColor: 'rgba(16,185,129,0.6)',
+        borderColor: '#10b981', borderWidth: 1, borderRadius: 4,
+      },
+      {
+        label: 'MRR',
+        data: [0.48, 0.97, 1.48, 0.39, 0.20, 2.67],
+        backgroundColor: 'rgba(6,182,212,0.5)',
+        borderColor: '#06b6d4', borderWidth: 1, borderRadius: 4,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { position: 'top' }, tooltip: tooltipStyle },
+    scales: {
+      x: { grid: darkGrid },
+      y: { grid: darkGrid, title: { display: true, text: 'Score (%)' } }
+    }
+  }
+});
+
+// ── 3. Ablation Chart ──
+new Chart(document.getElementById('ablationChart'), {
+  type: 'bar',
+  data: {
+    labels: ['A1: LLM\nGreedy', 'A2: Cluster\n+Random', 'A3: Cluster\n+Price (Ours)', 'A4: Cluster\n+TF-IDF', 'A5: Global\nPrice'],
+    datasets: [{
+      label: 'Recall@10 (%)',
+      data: [0.20, 2.10, 5.40, 3.60, 2.80],
+      backgroundColor: ['rgba(100,100,120,0.5)', 'rgba(99,102,241,0.5)', 'rgba(139,92,246,0.8)', 'rgba(99,102,241,0.4)', 'rgba(99,102,241,0.4)'],
+      borderColor: ['#6b6890', '#6366f1', '#8b5cf6', '#6366f1', '#6366f1'],
+      borderWidth: 1, borderRadius: 4,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false }, tooltip: tooltipStyle },
+    scales: {
+      x: { grid: darkGrid },
+      y: { grid: darkGrid, title: { display: true, text: 'Recall@10 (%)' }, max: 7 }
+    }
+  }
+});
+
+// ── 4. CV Chart ──
+new Chart(document.getElementById('cvChart'), {
+  type: 'radar',
+  data: {
+    labels: ['Macro F1', 'Title F1', 'Variety F1', 'Country F1', 'Year EM', 'Price Match'],
+    datasets: [
+      {
+        label: 'Config A (EasyOCR)',
+        data: [0.726, 0.295, 1.000, 0.667, 1.000, 0.667],
+        backgroundColor: 'rgba(99,102,241,0.1)', borderColor: '#6366f1', borderWidth: 2, pointRadius: 3,
+      },
+      {
+        label: 'Config D (Full ★)',
+        data: [1.000, 1.000, 1.000, 1.000, 1.000, 1.000],
+        backgroundColor: 'rgba(16,185,129,0.15)', borderColor: '#10b981', borderWidth: 2.5, pointRadius: 4,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { position: 'top' }, tooltip: tooltipStyle },
+    scales: {
+      r: {
+        min: 0, max: 1, ticks: { stepSize: 0.25, color: '#6b6890', backdropColor: 'transparent' },
+        grid: { color: 'rgba(255,255,255,0.06)' },
+        pointLabels: { color: '#a19bc9', font: { size: 10 } }
+      }
+    }
+  }
+});
+
+// ── 5. Sapo Chart ──
+new Chart(document.getElementById('sapoChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Content\nTF-IDF', 'Content\nBM25', 'Session\nSVD', 'Hybrid CF\n+Content', '★ CF\n(w/ history)'],
+    datasets: [
+      {
+        label: 'Recall@1', data: [1.33, 0.67, 10.00, 11.33, 56.00],
+        backgroundColor: 'rgba(139,92,246,0.6)', borderColor: '#8b5cf6', borderWidth: 1, borderRadius: 3,
+      },
+      {
+        label: 'Recall@10', data: [18.67, 21.33, 22.67, 34.67, 81.33],
+        backgroundColor: 'rgba(16,185,129,0.6)', borderColor: '#10b981', borderWidth: 1, borderRadius: 3,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { position: 'top' }, tooltip: tooltipStyle },
+    scales: {
+      x: { grid: darkGrid },
+      y: { grid: darkGrid, title: { display: true, text: 'Recall (%)' }, max: 100 }
+    }
+  }
+});
+
+// ── Intersection Observer for reveal ──
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.08 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

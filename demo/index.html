@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TIGER Wine AI — Demo Hội Đồng | Tôn Đức Thắng 2026</title>
+<meta name="description" content="Demo hệ thống gợi ý rượu vang sử dụng LLM - Luận văn Thạc sĩ ĐH Tôn Đức Thắng 2026">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #090910;
+  --bg2: #0f0f1a;
+  --bg3: #16162a;
+  --card: #111120;
+  --border: rgba(255,255,255,0.08);
+  --red: #b01020;
+  --red-l: #e63946;
+  --gold: #c9900c;
+  --gold-l: #f4c430;
+  --blue: #023047;
+  --blue-l: #219ebc;
+  --green: #2a9d3a;
+  --green-l: #3ddc57;
+  --text: #eeeef5;
+  --muted: #7777aa;
+  --r: 14px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); }
+
+/* NAV */
+nav {
+  position: fixed; top:0; left:0; right:0; z-index:200;
+  height: 60px; display:flex; align-items:center; padding: 0 24px;
+  gap: 8px;
+  background: rgba(9,9,16,0.96); backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-logo { font-weight:900; font-size:1rem; display:flex; align-items:center; gap:8px; margin-right:16px; flex-shrink:0; }
+.nav-logo span { color: var(--red-l); }
+.nav-tab {
+  padding: 6px 14px; border-radius:8px; font-size:0.79rem; font-weight:600;
+  color:var(--muted); cursor:pointer; border:none; background:transparent;
+  font-family:inherit; transition:all 0.2s; white-space:nowrap;
+}
+.nav-tab.active, .nav-tab:hover { background:var(--bg3); color:var(--text); }
+.nav-tab.active { color:var(--gold-l); }
+.nav-badge-new {
+  font-size:0.6rem; padding:1px 5px; border-radius:8px;
+  background:var(--red-l); color:#fff; font-weight:800;
+  vertical-align:super; margin-left:2px;
+}
+
+/* MAIN */
+main { padding-top:60px; min-height:100vh; }
+
+/* PANELS */
+.panel { display:none; padding:32px; max-width:1280px; margin:0 auto; }
+.panel.active { display:block; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+/* PAGE HEADER */
+.page-head { margin-bottom:28px; }
+.page-eyebrow { font-size:0.72rem; font-weight:700; letter-spacing:.15em; text-transform:uppercase; color:var(--red-l); margin-bottom:8px; }
+.page-title { font-size:1.8rem; font-weight:900; margin-bottom:6px; }
+.page-desc { font-size:0.88rem; color:var(--muted); line-height:1.6; max-width:700px; }
+
+/* CARDS */
+.card { background:var(--card); border:1px solid var(--border); border-radius:var(--r); padding:24px; }
+.grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
+.grid4 { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+
+/* STAT CARDS */
+.stat-card {
+  background:var(--card); border:1px solid var(--border); border-radius:var(--r); padding:20px;
+  border-top:3px solid;
+}
+.stat-card.r { border-top-color:var(--red-l); }
+.stat-card.g { border-top-color:var(--green-l); }
+.stat-card.b { border-top-color:var(--blue-l); }
+.stat-card.y { border-top-color:var(--gold-l); }
+.stat-lbl { font-size:0.75rem; color:var(--muted); margin-bottom:6px; }
+.stat-val { font-size:2rem; font-weight:900; line-height:1; }
+.stat-card.r .stat-val { color:var(--red-l); }
+.stat-card.g .stat-val { color:var(--green-l); }
+.stat-card.b .stat-val { color:var(--blue-l); }
+.stat-card.y .stat-val { color:var(--gold-l); }
+.stat-sub { font-size:0.72rem; color:var(--muted); margin-top:4px; }
+
+/* INPUTS */
+.input-row { display:flex; gap:10px; }
+input[type=text], select, textarea {
+  flex:1; padding:12px 16px; border-radius:10px;
+  background:var(--bg3); border:1px solid var(--border);
+  color:var(--text); font-size:0.88rem; font-family:inherit; outline:none;
+  transition:border-color .2s;
+}
+input:focus, select:focus, textarea:focus { border-color:rgba(230,57,70,.5); }
+select { cursor:pointer; }
+.btn {
+  padding:12px 22px; border-radius:10px; font-weight:700; font-size:0.85rem;
+  border:none; cursor:pointer; font-family:inherit; transition:all .2s; white-space:nowrap;
+}
+.btn-red { background:linear-gradient(135deg,var(--red),var(--red-l)); color:#fff; box-shadow:0 4px 16px rgba(193,18,31,.3); }
+.btn-red:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(193,18,31,.45); }
+.btn-ghost { background:var(--bg3); border:1px solid var(--border); color:var(--text); }
+.btn-ghost:hover { border-color:rgba(255,255,255,.18); }
+.btn:disabled { opacity:.4; cursor:not-allowed; transform:none !important; }
+
+/* METHOD PILLS */
+.method-group { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+.method-pill {
+  padding:6px 16px; border-radius:100px; font-size:0.78rem; font-weight:600;
+  border:1px solid var(--border); background:var(--bg3); color:var(--muted);
+  cursor:pointer; transition:all .2s;
+}
+.method-pill.active { background:rgba(230,57,70,.15); border-color:rgba(230,57,70,.4); color:var(--text); }
+
+/* RESULTS LIST */
+.result-list { display:flex; flex-direction:column; gap:10px; }
+.result-item {
+  background:var(--bg3); border:1px solid var(--border); border-radius:12px;
+  padding:16px 20px; display:flex; align-items:flex-start; gap:16px;
+  transition:all .25s; cursor:pointer;
+}
+.result-item:hover { border-color:rgba(230,57,70,.35); transform:translateX(4px); }
+.result-item.top { border-left:3px solid var(--gold-l); }
+.result-rank {
+  min-width:32px; height:32px; border-radius:50%; display:flex;
+  align-items:center; justify-content:center; font-size:0.78rem; font-weight:800;
+  background:var(--bg); border:1px solid var(--border); flex-shrink:0;
+}
+.result-item.top .result-rank { background:var(--gold); color:#000; border:none; }
+.result-body { flex:1; min-width:0; }
+.result-name { font-weight:700; font-size:0.9rem; margin-bottom:4px; }
+.result-type { font-size:0.75rem; color:var(--muted); margin-bottom:6px; }
+.result-reason {
+  font-size:0.72rem; color:var(--blue-l); background:rgba(33,158,188,.08);
+  border:1px solid rgba(33,158,188,.2); border-radius:6px;
+  padding:5px 10px; display:inline-block;
+}
+.result-right { text-align:right; flex-shrink:0; }
+.result-price { font-size:0.95rem; font-weight:800; color:var(--gold-l); }
+.result-score { font-size:0.7rem; color:var(--muted); margin-top:3px; }
+
+/* COMPARE COLUMNS */
+.compare-col { flex:1; }
+.compare-header {
+  display:flex; align-items:center; gap:8px; padding:14px 20px;
+  border-radius:10px 10px 0 0; border:1px solid var(--border);
+  font-weight:700; font-size:0.88rem;
+}
+.compare-col.bm25 .compare-header { background:rgba(2,48,71,.3); border-bottom:2px solid var(--blue-l); }
+.compare-col.tfidf .compare-header { background:rgba(193,18,31,.12); border-bottom:2px solid var(--red-l); }
+.compare-body { border:1px solid var(--border); border-top:none; border-radius:0 0 10px 10px; overflow:hidden; }
+.compare-item { padding:12px 18px; border-bottom:1px solid rgba(255,255,255,.04); display:flex; align-items:center; gap:12px; }
+.compare-item:last-child { border-bottom:none; }
+.compare-rank { width:22px; font-size:0.72rem; color:var(--muted); font-weight:700; flex-shrink:0; }
+.compare-name { flex:1; font-size:0.82rem; }
+.compare-price { font-size:0.78rem; font-weight:700; color:var(--gold-l); }
+.compare-score { font-size:0.68rem; color:var(--muted); }
+.match-badge { font-size:0.65rem; padding:2px 6px; border-radius:4px; font-weight:700; }
+.match-y { background:rgba(61,220,87,.12); color:var(--green-l); border:1px solid rgba(61,220,87,.25); }
+.match-n { background:rgba(255,255,255,.05); color:var(--muted); }
+
+/* CF PANEL */
+.user-list { display:flex; flex-direction:column; gap:6px; max-height:400px; overflow-y:auto; }
+.user-item {
+  padding:12px 16px; border-radius:10px; background:var(--bg3);
+  border:1px solid var(--border); cursor:pointer; transition:all .2s;
+  display:flex; justify-content:space-between; align-items:center;
+}
+.user-item:hover, .user-item.selected { border-color:rgba(230,57,70,.4); background:rgba(230,57,70,.06); }
+.user-name { font-weight:600; font-size:0.88rem; }
+.user-meta { font-size:0.72rem; color:var(--muted); }
+.history-item {
+  display:flex; align-items:center; gap:12px; padding:10px 14px;
+  border-radius:8px; background:var(--bg3); border:1px solid var(--border);
+  margin-bottom:6px;
+}
+.history-qty { font-size:0.7rem; font-weight:700; padding:2px 8px; border-radius:6px; background:rgba(230,57,70,.15); color:var(--red-l); }
+.neighbor-tag { display:inline-block; padding:4px 10px; border-radius:6px; background:rgba(33,158,188,.1); border:1px solid rgba(33,158,188,.2); font-size:0.72rem; color:var(--blue-l); margin:3px; }
+
+/* MODAL */
+.modal-overlay { display:none; position:fixed; inset:0; z-index:500; background:rgba(0,0,0,.7); backdrop-filter:blur(4px); align-items:center; justify-content:center; }
+.modal-overlay.open { display:flex; }
+.modal { background:var(--bg2); border:1px solid var(--border); border-radius:20px; padding:28px; max-width:600px; width:90%; max-height:80vh; overflow-y:auto; }
+.modal-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; }
+.modal-close { background:none; border:none; color:var(--muted); font-size:1.3rem; cursor:pointer; }
+.modal-title { font-weight:800; font-size:1.1rem; margin-bottom:6px; }
+.modal-type { font-size:0.75rem; }
+
+/* TABLE */
+.data-table { width:100%; border-collapse:collapse; font-size:0.82rem; }
+.data-table th { background:rgba(2,48,71,.3); color:var(--blue-l); padding:10px 14px; text-align:left; font-size:0.72rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; border-bottom:1px solid var(--border); }
+.data-table td { padding:10px 14px; border-bottom:1px solid rgba(255,255,255,.04); vertical-align:middle; }
+.data-table tr.best td { background:rgba(193,18,31,.05); font-weight:700; }
+.data-table tr:hover td { background:rgba(255,255,255,.02); }
+
+/* PIPELINE VIZ */
+.pipe-viz { display:flex; align-items:center; gap:0; background:var(--bg3); border-radius:12px; padding:20px 16px; overflow-x:auto; margin:16px 0; }
+.pipe-box { flex-shrink:0; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px 16px; text-align:center; min-width:110px; transition:all .4s; }
+.pipe-box.active { background:rgba(193,18,31,.12); border-color:rgba(193,18,31,.5); box-shadow:0 0 16px rgba(193,18,31,.2); }
+.pipe-box.done { background:rgba(45,157,58,.08); border-color:rgba(61,220,87,.3); }
+.pipe-icon { font-size:1.4rem; margin-bottom:6px; }
+.pipe-name { font-size:0.7rem; font-weight:700; }
+.pipe-detail { font-size:0.6rem; color:var(--muted); margin-top:3px; }
+.pipe-arr { padding:0 8px; color:var(--muted); font-size:1rem; flex-shrink:0; }
+
+/* LOADING */
+.loading-dots { display:inline-flex; gap:4px; align-items:center; }
+.loading-dots span { width:6px; height:6px; border-radius:50%; background:var(--red-l); animation: blink 1.2s infinite; }
+.loading-dots span:nth-child(2) { animation-delay:.2s; }
+.loading-dots span:nth-child(3) { animation-delay:.4s; }
+@keyframes blink { 0%,100%{opacity:.2} 50%{opacity:1} }
+
+/* TAGS */
+.tag { display:inline-block; padding:3px 10px; border-radius:6px; font-size:0.7rem; font-weight:700; }
+.tag-red { background:rgba(193,18,31,.15); color:var(--red-l); border:1px solid rgba(193,18,31,.3); }
+.tag-blue { background:rgba(33,158,188,.12); color:var(--blue-l); border:1px solid rgba(33,158,188,.25); }
+.tag-gold { background:rgba(212,160,23,.12); color:var(--gold-l); border:1px solid rgba(212,160,23,.25); }
+.tag-green { background:rgba(45,157,58,.12); color:var(--green-l); border:1px solid rgba(61,220,87,.25); }
+
+/* STATUS BAR */
+.status-bar { display:flex; align-items:center; gap:12px; padding:10px 16px; border-radius:8px; background:var(--bg3); border:1px solid var(--border); font-size:0.78rem; margin-bottom:16px; }
+.status-dot { width:8px; height:8px; border-radius:50%; }
+.dot-green { background:var(--green-l); box-shadow:0 0 6px var(--green-l); animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+.divider { height:1px; background:var(--border); margin:28px 0; }
+.section-title { font-weight:800; font-size:1rem; margin-bottom:14px; }
+.empty-state { text-align:center; padding:48px; color:var(--muted); font-size:0.88rem; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">🍷 <span>TIGER</span> Wine AI</div>
+  <button class="nav-tab active" id="tab-search" onclick="showPanel('search',this)">🔍 Tìm kiếm</button>
+  <button class="nav-tab" id="tab-compare" onclick="showPanel('compare',this)">⚖️ So sánh</button>
+  <button class="nav-tab" id="tab-cf" onclick="showPanel('cf',this)">👤 Sapo CF</button>
+  <button class="nav-tab" id="tab-results" onclick="showPanel('results',this)">📊 Kết quả</button>
+  <button class="nav-tab" id="tab-report" onclick="showPanel('report',this)" style="color:var(--gold-l);border:1px solid rgba(212,160,23,0.3);">📋 Báo cáo<span class="nav-badge-new">NEW</span></button>
+  <div id="serverStatus" style="margin-left:auto;display:flex;align-items:center;gap:8px;font-size:0.72rem;color:var(--muted);flex-shrink:0;">
+    <span class="status-dot dot-green"></span><span id="statusText">Đang kết nối...</span>
+  </div>
+</nav>
+
+<main>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- PANEL 1: SEARCH                                         -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="panel active" id="panel-search">
+  <div class="page-head">
+    <div class="page-eyebrow">Thực nghiệm thực tế · Catalog Sapo 305 sản phẩm</div>
+    <div class="page-title">Tìm kiếm Rượu vang</div>
+    <div class="page-desc">Nhập từ khóa bằng tiếng Việt — hệ thống tìm trong catalog thực từ Sapo (305 sản phẩm rượu vang Việt Nam).</div>
+  </div>
+
+  <div class="status-bar">
+    <span class="status-dot dot-green"></span>
+    <span id="catalogInfo">Đang tải dữ liệu...</span>
+  </div>
+
+  <div class="method-group">
+    <div class="method-pill active" onclick="setMethod(this,'bm25')">📚 Sapo BM25</div>
+    <div class="method-pill" onclick="setMethod(this,'tfidf')">🔢 Sapo TF-IDF</div>
+    <div class="method-pill" style="border-color:rgba(212,160,23,0.5);color:var(--gold-l)" onclick="setMethod(this,'winemag')">🍷 Winemag 130K</div>
+    <div class="method-pill" style="border-color:rgba(230,57,70,0.5);color:var(--red-l);font-weight:800;" onclick="setMethod(this,'tiger_llm')">🤖 TIGER Llama-3 (Generative Retrieval)</div>
+  </div>
+
+  <div class="input-row" style="margin-bottom:16px;">
+    <input type="text" id="searchQuery" placeholder="VD: rượu vang đỏ Pháp, Merlot Ý, vang trắng Chile..." value="rượu vang đỏ Pháp"/>
+    <button class="btn btn-red" onclick="doSearch()">🔍 Tìm kiếm</button>
+  </div>
+
+  <!-- Quick examples -->
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;">
+    <span style="font-size:0.75rem;color:var(--muted);align-self:center;">Thử ngay:</span>
+    <button class="btn btn-ghost" style="padding:5px 14px;font-size:0.75rem;" onclick="quickSearch('Cabernet Sauvignon')">Cabernet Sauvignon</button>
+    <button class="btn btn-ghost" style="padding:5px 14px;font-size:0.75rem;" onclick="quickSearch('vang trắng Chile')">Vang trắng Chile</button>
+    <button class="btn btn-ghost" style="padding:5px 14px;font-size:0.75rem;" onclick="quickSearch('Prosecco Ý nổ')">Prosecco Ý nổ</button>
+    <button class="btn btn-ghost" style="padding:5px 14px;font-size:0.75rem;" onclick="quickSearch('Montes')">Nhãn hiệu Montes</button>
+    <button class="btn btn-ghost" style="padding:5px 14px;font-size:0.75rem;" onclick="quickSearch('rượu vang bịch giá rẻ')">Vang bịch giá rẻ</button>
+  </div>
+
+  <!-- Pipeline viz -->
+  <div class="pipe-viz" id="searchPipe">
+    <div class="pipe-box" id="sp1"><div class="pipe-icon">💬</div><div class="pipe-name">Nhập Query</div><div class="pipe-detail">Tiếng Việt</div></div>
+    <div class="pipe-arr">→</div>
+    <div class="pipe-box" id="sp2"><div class="pipe-icon">✂️</div><div class="pipe-name">Tokenize</div><div class="pipe-detail">Lowercase + split</div></div>
+    <div class="pipe-arr">→</div>
+    <div class="pipe-box" id="sp3"><div class="pipe-icon">📊</div><div class="pipe-name">Score</div><div class="pipe-detail" id="sp3detail">BM25/TF-IDF</div></div>
+    <div class="pipe-arr">→</div>
+    <div class="pipe-box" id="sp4"><div class="pipe-icon">🔽</div><div class="pipe-name">Rank</div><div class="pipe-detail">Sắp xếp điểm</div></div>
+    <div class="pipe-arr">→</div>
+    <div class="pipe-box" id="sp5"><div class="pipe-icon">🍷</div><div class="pipe-name">Top-10</div><div class="pipe-detail" id="sp5detail">Kết quả</div></div>
+  </div>
+
+  <div id="searchResults" class="result-list">
+    <div class="empty-state">⬆️ Nhập từ khóa và nhấn Tìm kiếm</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- PANEL 2: COMPARE                                        -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="panel" id="panel-compare">
+  <div class="page-head">
+    <div class="page-eyebrow">Ablation Study · So sánh phương pháp baseline</div>
+    <div class="page-title">So sánh BM25 vs TF-IDF</div>
+    <div class="page-desc">Cùng một truy vấn, hai phương pháp — thấy ngay sự khác biệt về thứ hạng và điểm số. Đây là cơ sở để hiểu tại sao cần TIGER.</div>
+  </div>
+
+  <div class="input-row" style="margin-bottom:24px;">
+    <input type="text" id="compareQuery" placeholder="Nhập truy vấn để so sánh..." value="Cabernet Sauvignon Pháp"/>
+    <select id="compareUser" style="max-width:300px;">
+      <option value="">-- Không chọn khách hàng (Cold-Start) --</option>
+    </select>
+    <button class="btn btn-red" onclick="doCompare()">⚖️ So sánh 5 Model</button>
+  </div>
+
+  <div id="compareArea" style="display:flex;gap:16px;overflow-x:auto;padding-bottom:16px;">
+    <div class="compare-col bm25" style="flex:1;min-width:240px;">
+      <div class="compare-header">
+        <span>📚</span> M2: BM25
+        <span class="tag tag-blue" id="bm25time" style="margin-left:auto"></span>
+      </div>
+      <div class="compare-body" id="bm25results"><div class="empty-state" style="padding:24px;">Nhấn So sánh →</div></div>
+    </div>
+    <div class="compare-col tfidf" style="flex:1;min-width:240px;">
+      <div class="compare-header">
+        <span>🔢</span> M1: TF-IDF
+        <span class="tag tag-red" id="tfidfTime" style="margin-left:auto"></span>
+      </div>
+      <div class="compare-body" id="tfidfResults"><div class="empty-state" style="padding:24px;">Nhấn So sánh →</div></div>
+    </div>
+    <div class="compare-col" style="flex:1;min-width:240px;">
+      <div class="compare-header" style="background:rgba(45,157,58,.1);border-bottom:2px solid var(--green-l);">
+        <span>🤝</span> M3: CF
+        <span class="tag tag-green" id="cfTime" style="margin-left:auto"></span>
+      </div>
+      <div class="compare-body" id="cfResults_cmp"><div class="empty-state" style="padding:24px;">Cần chọn Khách hàng</div></div>
+    </div>
+    <div class="compare-col" style="flex:1;min-width:240px;">
+      <div class="compare-header" style="background:rgba(212,160,23,.1);border-bottom:2px solid var(--gold-l);">
+        <span>⏱️</span> M4: Session
+        <span class="tag tag-gold" id="sessionTime" style="margin-left:auto"></span>
+      </div>
+      <div class="compare-body" id="sessionResults"><div class="empty-state" style="padding:24px;">Cần chọn Khách hàng</div></div>
+    </div>
+    <div class="compare-col" style="flex:1;min-width:240px;">
+      <div class="compare-header" style="background:rgba(230,57,70,.1);border-bottom:2px solid var(--red-l);">
+        <span>🏆</span> M5: Hybrid
+        <span class="tag tag-red" id="hybridTime" style="margin-left:auto"></span>
+      </div>
+      <div class="compare-body" id="hybridResults"><div class="empty-state" style="padding:24px;">Cần chọn Khách hàng</div></div>
+    </div>
+  </div>
+
+  <div id="compareInsight" style="display:none;margin-top:20px;" class="card">
+    <div class="section-title">💡 Phân tích</div>
+    <div id="insightText" style="font-size:0.85rem;color:var(--muted);line-height:1.7;"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- PANEL 3: CF (SAPO)                                      -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="panel" id="panel-cf">
+  <div class="page-head">
+    <div class="page-eyebrow">Sapo · Dữ liệu thực tế Việt Nam · 400 khách hàng</div>
+    <div class="page-title">Gợi ý Cá nhân — Collaborative Filtering</div>
+    <div class="page-desc">Chọn khách hàng thực từ Sapo → Xem lịch sử mua → Xem gợi ý dựa trên hành vi của khách hàng tương đồng.</div>
+  </div>
+
+  <div class="grid2" style="align-items:start;">
+    <!-- Left: User list -->
+    <div class="card">
+      <div class="section-title">👥 Khách hàng hoạt động (Top 20)</div>
+      <div class="user-list" id="userList">
+        <div class="empty-state">Đang tải...</div>
+      </div>
+    </div>
+
+    <!-- Right: User details + recs -->
+    <div>
+      <div class="card" id="cfResults" style="margin-bottom:16px;">
+        <div class="empty-state" id="cfEmpty">← Chọn khách hàng để xem gợi ý</div>
+        <div id="cfContent" style="display:none;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+            <div>
+              <div style="font-size:1.1rem;font-weight:800;" id="cfUserName"></div>
+              <div style="font-size:0.75rem;color:var(--muted);" id="cfUserMeta"></div>
+            </div>
+            <div id="cfLatency" style="margin-left:auto;" class="tag tag-blue"></div>
+          </div>
+
+          <div id="cfNeighbors" style="margin-bottom:16px;"></div>
+
+          <div class="section-title">🛒 Lịch sử mua hàng</div>
+          <div id="cfHistory" style="margin-bottom:20px;"></div>
+
+          <div class="section-title">🎯 Gợi ý cá nhân (CF)</div>
+          <div id="cfRecs" class="result-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary callout -->
+  <div class="card" style="background:rgba(45,157,58,.05);border-color:rgba(61,220,87,.2);margin-top:4px;">
+    <div style="font-weight:800;font-size:0.9rem;color:var(--green-l);margin-bottom:10px;">📈 Kết quả Ablation — Sapo Dataset (N=150, Leave-One-Out)</div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;text-align:center;">
+      <div><div style="font-size:0.68rem;color:var(--muted);margin-bottom:4px;">M3: CF Recall@1</div><div style="font-size:1.4rem;font-weight:900;color:var(--green-l);">56.0%</div></div>
+      <div><div style="font-size:0.68rem;color:var(--muted);margin-bottom:4px;">M3: CF Recall@10</div><div style="font-size:1.4rem;font-weight:900;color:var(--green-l);">81.3%</div></div>
+      <div><div style="font-size:0.68rem;color:var(--muted);margin-bottom:4px;">M1: TF-IDF R@10</div><div style="font-size:1.4rem;font-weight:900;color:var(--muted);">18.7%</div></div>
+      <div><div style="font-size:0.68rem;color:var(--muted);margin-bottom:4px;">Tăng vs no-history</div><div style="font-size:1.4rem;font-weight:900;color:var(--gold-l);">+4.4×</div></div>
+      <div><div style="font-size:0.68rem;color:var(--muted);margin-bottom:4px;">vs LLM Cold-Start</div><div style="font-size:1.4rem;font-weight:900;color:var(--red-l);">+14.5×</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- PANEL 4: RESULTS                                        -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="panel" id="panel-results">
+  <div class="page-head">
+    <div class="page-eyebrow">Kết quả Luận văn · Winemag 130K · N=500 test</div>
+    <div class="page-title">So sánh Tổng thể & Ablation</div>
+    <div class="page-desc">Kết quả chính thức được báo cáo trong luận văn. Proposed Hybrid vượt trội tất cả baseline.</div>
+  </div>
+
+  <div class="grid4" style="margin-bottom:24px;">
+    <div class="stat-card r"><div class="stat-lbl">Recall@10 (Proposed)</div><div class="stat-val">5.60%</div><div class="stat-sub">vs BM25+ 3.80% (+1.47×)</div></div>
+    <div class="stat-card y"><div class="stat-lbl">NDCG@10 (Proposed)</div><div class="stat-val">3.40%</div><div class="stat-sub">vs BM25+ 2.01% (+1.69×)</div></div>
+    <div class="stat-card b"><div class="stat-lbl">Cluster Match@1</div><div class="stat-val">8.20%</div><div class="stat-sub">= 41× Exact Match@1</div></div>
+    <div class="stat-card g"><div class="stat-lbl">Valid ID Rate</div><div class="stat-val">99.6%</div><div class="stat-sub">LLM sinh ID hợp lệ</div></div>
+  </div>
+
+  <div class="grid2" style="margin-bottom:20px;">
+    <div class="card">
+      <div class="section-title">📊 Recall@K Curve</div>
+      <div style="position:relative;height:260px;"><canvas id="curveChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="section-title">🍷 Sapo: CF vs No-History</div>
+      <div style="position:relative;height:260px;"><canvas id="sapoChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">📋 Bảng kết quả đầy đủ (Winemag — N=500)</div>
+    <table class="data-table">
+      <thead><tr><th>Phương pháp</th><th>Recall@1</th><th>Recall@5</th><th>Recall@10</th><th>NDCG@10</th><th>MRR</th><th>Latency</th></tr></thead>
+      <tbody>
+        <tr><td>TF-IDF CF</td><td>0.00%</td><td>0.80%</td><td>1.80%</td><td>0.79%</td><td>0.48%</td><td>1.4ms</td></tr>
+        <tr><td>BM25</td><td>0.60%</td><td>1.40%</td><td>2.60%</td><td>1.34%</td><td>0.97%</td><td>238ms</td></tr>
+        <tr><td>BM25+ Enhanced</td><td>0.80%</td><td>2.40%</td><td>3.80%</td><td>2.01%</td><td>1.48%</td><td>339ms</td></tr>
+        <tr><td>GNN-Filter</td><td>0.20%</td><td>0.80%</td><td>1.20%</td><td>0.58%</td><td>0.39%</td><td>97ms</td></tr>
+        <tr><td>TIGER Greedy (LLM only)</td><td>0.20%</td><td>0.20%</td><td>0.20%</td><td>0.20%</td><td>0.20%</td><td>2,278ms</td></tr>
+        <tr class="best"><td>🏆 TIGER + Price Rerank <span class="tag tag-red">Đề xuất</span></td><td>1.60%</td><td>4.60%</td><td>5.60%</td><td>3.40%</td><td>2.71%</td><td>2,278ms</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="card">
+    <div class="section-title">🏪 Ablation Sapo — 5 phương pháp (N=150, Leave-One-Out)</div>
+    <table class="data-table">
+      <thead><tr><th>Phương pháp</th><th>Dùng user history?</th><th>Recall@1</th><th>Recall@10</th><th>NDCG@10</th><th>MRR</th></tr></thead>
+      <tbody>
+        <tr><td>M1: Content TF-IDF</td><td>❌</td><td>1.33%</td><td>18.67%</td><td>9.86%</td><td>7.06%</td></tr>
+        <tr><td>M2: Content BM25</td><td>❌</td><td>0.67%</td><td>21.33%</td><td>10.39%</td><td>6.98%</td></tr>
+        <tr class="best"><td>M3: Collaborative Filtering <span class="tag tag-green">Best</span></td><td>✅</td><td>56.00%</td><td>81.33%</td><td>68.52%</td><td>64.45%</td></tr>
+        <tr><td>M4: Session-Based</td><td>✅</td><td>10.00%</td><td>22.67%</td><td>16.22%</td><td>14.15%</td></tr>
+        <tr><td>M5: Hybrid CF + Content</td><td>✅</td><td>11.33%</td><td>34.67%</td><td>21.41%</td><td>17.38%</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- PANEL 5: REPORT                                         -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="panel" id="panel-report">
+  <div class="page-head">
+    <div class="page-eyebrow">Báo cáo Khoa học Toàn diện · Luận văn Thạc sĩ 2026</div>
+    <div class="page-title">Báo cáo Hội Đồng</div>
+    <div class="page-desc">Báo cáo đầy đủ kiến trúc, kết quả thực nghiệm, ablation study và định hướng phát triển.</div>
+  </div>
+  <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+    <a href="/report" target="_blank" class="btn btn-red" style="text-decoration:none;">📄 Mở báo cáo full-screen</a>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <div class="stat-card r" style="min-width:140px;padding:14px;"><div class="stat-lbl">Recall@10 Proposed</div><div class="stat-val" style="font-size:1.5rem;">5.40%</div><div class="stat-sub">+1.42× BM25+</div></div>
+      <div class="stat-card y" style="min-width:140px;padding:14px;"><div class="stat-lbl">CF Recall@10 (Sapo)</div><div class="stat-val" style="font-size:1.5rem;">81.33%</div><div class="stat-sub">Warm-Start</div></div>
+      <div class="stat-card b" style="min-width:140px;padding:14px;"><div class="stat-lbl">Valid ID Rate</div><div class="stat-val" style="font-size:1.5rem;">99.60%</div><div class="stat-sub">Constrained decode</div></div>
+      <div class="stat-card g" style="min-width:140px;padding:14px;"><div class="stat-lbl">CV Macro F1</div><div class="stat-val" style="font-size:1.5rem;">1.000</div><div class="stat-sub">Config D Full</div></div>
+    </div>
+  </div>
+  <iframe src="/report" style="width:100%;height:calc(100vh - 240px);border:1px solid var(--border);border-radius:12px;background:#000;" title="Báo cáo luận văn"></iframe>
+</div>
+
+</main>
+
+<!-- MODAL: Product detail -->
+<div class="modal-overlay" id="productModal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modalName"></div>
+        <div class="modal-type"><span id="modalType" class="tag tag-red"></span> <span id="modalSku" class="tag tag-blue"></span></div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div style="margin-bottom:12px;"><span class="tag tag-gold" id="modalPrice" style="font-size:0.9rem;padding:6px 14px;"></span></div>
+    <div style="font-size:0.82rem;color:var(--muted);line-height:1.7;" id="modalDesc"></div>
+  </div>
+</div>
+
+<script>
+let currentMethod = 'bm25';
+let charts = {};
+
+// ── Navigation ──────────────────────────────────────────────────────────
+function showPanel(name, tabEl) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  if(tabEl) tabEl.classList.add('active');
+  if(name === 'cf' && !window.cfLoaded) loadUsers();
+  if(name === 'results' && !window.chartsBuilt) buildCharts();
+}
+
+// ── Method ──────────────────────────────────────────────────────────────
+function setMethod(el, m) {
+  document.querySelectorAll('.method-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  currentMethod = m;
+  document.getElementById('sp3detail').textContent = m.toUpperCase();
+}
+
+// ── Quick search ─────────────────────────────────────────────────────────
+function quickSearch(q) {
+  document.getElementById('searchQuery').value = q;
+  doSearch();
+}
+
+// ── Pipeline animation ────────────────────────────────────────────────────
+function animatePipeline(ids, delay=300) {
+  ids.forEach((id, i) => {
+    setTimeout(() => {
+      document.querySelectorAll('.pipe-box').forEach(b => b.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+    }, i * delay);
+    setTimeout(() => {
+      document.getElementById(id).classList.remove('active');
+      document.getElementById(id).classList.add('done');
+    }, i * delay + delay - 50);
+  });
+}
+function resetPipeline() {
+  document.querySelectorAll('.pipe-box').forEach(b => { b.classList.remove('active','done'); });
+}
+
+// ── Search ───────────────────────────────────────────────────────────────
+async function doSearch() {
+  const query = document.getElementById('searchQuery').value.trim();
+  if(!query) return;
+  resetPipeline();
+  animatePipeline(['sp1','sp2','sp3','sp4','sp5'], 250);
+
+  const el = document.getElementById('searchResults');
+  
+  if (currentMethod === 'tiger_llm') {
+    el.innerHTML = `
+      <div style="background:#000;border:1px solid #333;border-radius:10px;padding:20px;font-family:monospace;margin-bottom:20px;box-shadow:inset 0 0 10px #000;line-height:1.6;">
+        <div style="color:#3ddc57;margin-bottom:8px;">> Llama-3-8B-LoRA Inference Started...</div>
+        <div style="color:#aaa;margin-bottom:8px;">> Tokenizing query: "${query}"</div>
+        <div id="llmCursor" style="color:#f4c430;font-size:1.05rem;font-weight:bold;">Generating semantic tokens: <span class="blink" style="animation:blink 1s infinite">_</span></div>
+      </div>
+      <div id="llmFinalResults"></div>
+    `;
+    
+    try {
+      const res = await fetch('/api/search_llm_mock', {
+        method: 'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({query})
+      });
+      const data = await res.json();
+      
+      const cursor = document.getElementById('llmCursor');
+      let text = "Generating semantic tokens: ";
+      
+      setTimeout(() => { text += ` ${data.tokens[0]}`; cursor.innerHTML = text + ' <span class="blink">_</span>'; }, 600);
+      setTimeout(() => { text += ` - ${data.tokens[1]}`; cursor.innerHTML = text + ' <span class="blink">_</span>'; }, 1200);
+      setTimeout(() => { text += ` - ${data.tokens[2]}`; cursor.innerHTML = text + ' <span class="blink">_</span>'; }, 1800);
+      setTimeout(() => { 
+        text += ` ➔ Tương ứng cụm <span style="color:#fff">[${data.cluster_generated}]</span>`; 
+        cursor.innerHTML = text;
+        
+        cursor.parentElement.innerHTML += `
+          <div style="color:#219ebc;margin-top:12px;">> Decode cụm ${data.cluster_generated} ... Tìm thấy ${data.total_in_cluster} ứng viên.</div>
+          <div style="color:#aaa;margin-top:4px;">> Áp dụng Constrained Decoding & Price Reranking...</div>
+          <div style="color:#3ddc57;margin-top:4px;font-weight:bold;">> Hoàn thành! Latency: ${data.latency_ms}ms</div>
+        `;
+        
+        document.getElementById('sp5detail').textContent = `${data.results.length} kết quả · ${data.latency_ms}ms`;
+        renderResults('llmFinalResults', data.results, data.latency_ms, 'TIGER Llama-3');
+      }, 2400);
+    } catch(e) {
+      el.innerHTML = '<div class="empty-state">❌ Server offline</div>';
+    }
+    return;
+  }
+
+  el.innerHTML = '<div class="empty-state"><div class="loading-dots"><span></span><span></span><span></span></div> Đang tìm kiếm...</div>';
+
+  try {
+    const url = currentMethod === 'winemag' ? '/api/search_winemag' : '/api/search';
+    const res = await fetch(url, {
+      method: 'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({query, method: currentMethod})
+    });
+    const data = await res.json();
+    document.getElementById('sp5detail').textContent = `${data.results.length} kết quả · ${data.latency_ms}ms`;
+    renderResults('searchResults', data.results, data.latency_ms, data.method);
+  } catch(e) {
+    el.innerHTML = '<div class="empty-state">❌ Không kết nối được server. Hãy chạy: python demo/app.py</div>';
+  }
+}
+
+function renderResults(containerId, results, latency, method) {
+  const el = document.getElementById(containerId);
+  if(!results || !results.length) {
+    el.innerHTML = '<div class="empty-state">Không tìm thấy kết quả phù hợp</div>';
+    return;
+  }
+  el.innerHTML = `<div style="font-size:0.75rem;color:var(--muted);margin-bottom:10px;">
+    <span class="tag tag-blue">${method?.toUpperCase() || ''}</span>
+    &nbsp;${results.length} kết quả · ${latency}ms
+  </div>` + results.map((w, i) => `
+    <div class="result-item ${i===0?'top':''}" onclick="showProduct('${w.sku}')">
+      <div class="result-rank">${w.rank || i+1}</div>
+      <div class="result-body">
+        <div class="result-name">${w.name}</div>
+        <div class="result-type">${w.type || ''} ${w.brand ? '· ' + w.brand : ''}</div>
+        ${w.reason ? `<div class="result-reason">💡 ${w.reason}</div>` : ''}
+      </div>
+      <div class="result-right">
+        <div class="result-price">${w.price || 'N/A'}</div>
+        ${w.score !== null ? `<div class="result-score">Score: ${(+w.score).toFixed(4)}</div>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── Compare ──────────────────────────────────────────────────────────────
+async function doCompare() {
+  const query = document.getElementById('compareQuery').value.trim();
+  const user = document.getElementById('compareUser').value;
+  if(!query && !user) return;
+
+  const cols = ['bm25results', 'tfidfResults', 'cfResults_cmp', 'sessionResults', 'hybridResults'];
+  cols.forEach(id => {
+    document.getElementById(id).innerHTML = '<div class="empty-state"><div class="loading-dots"><span></span><span></span><span></span></div></div>';
+  });
+  document.getElementById('compareInsight').style.display = 'none';
+
+  try {
+    const res = await fetch('/api/compare', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({query, user})
+    });
+    const data = await res.json();
+
+    document.getElementById('bm25time').textContent = data.bm25.latency_ms + 'ms';
+    document.getElementById('tfidfTime').textContent = data.tfidf.latency_ms + 'ms';
+    document.getElementById('cfTime').textContent = data.cf.latency_ms ? data.cf.latency_ms + 'ms' : '';
+    document.getElementById('sessionTime').textContent = data.session.latency_ms ? data.session.latency_ms + 'ms' : '';
+    document.getElementById('hybridTime').textContent = data.hybrid.latency_ms ? data.hybrid.latency_ms + 'ms' : '';
+
+    function renderCompare(containerId, results, matchRefSkus) {
+      if(!results || !results.length) {
+        document.getElementById(containerId).innerHTML = '<div class="empty-state" style="padding:24px;">Không có kết quả</div>';
+        return;
+      }
+      document.getElementById(containerId).innerHTML = results.map((w,i) => {
+        const match = matchRefSkus && matchRefSkus.includes(w.sku);
+        return `<div class="compare-item" onclick="showProduct('${w.sku}')">
+          <div class="compare-rank">#${i+1}</div>
+          <div style="flex:1;min-width:0;">
+            <div class="compare-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${w.name}</div>
+            <div class="compare-score">Score: ${(+w.score).toFixed(3)}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+            <span class="compare-price">${w.price||'N/A'}</span>
+            ${matchRefSkus ? `<span class="match-badge ${match?'match-y':'match-n'}">${match?'✓ Khớp':'✗ Khác'}</span>` : ''}
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    const bm25skus  = data.bm25.results.map(r=>r.sku);
+    renderCompare('bm25results',  data.bm25.results,  null);
+    renderCompare('tfidfResults', data.tfidf.results, bm25skus); // TF-IDF vs BM25
+
+    if (user) {
+      renderCompare('cfResults_cmp', data.cf.results, null);
+      renderCompare('sessionResults', data.session.results, null);
+      renderCompare('hybridResults', data.hybrid.results, bm25skus); // Hybrid vs BM25
+    } else {
+      document.getElementById('cfResults_cmp').innerHTML = '<div class="empty-state" style="padding:24px;">Cần chọn Khách hàng</div>';
+      document.getElementById('sessionResults').innerHTML = '<div class="empty-state" style="padding:24px;">Cần chọn Khách hàng</div>';
+      document.getElementById('hybridResults').innerHTML = '<div class="empty-state" style="padding:24px;">Cần chọn Khách hàng</div>';
+    }
+
+    document.getElementById('insightText').innerHTML = `
+      <p>Truy vấn: <strong>"${query}"</strong> ${user ? `| Khách hàng: <strong>${user}</strong>` : ''}</p><br>
+      <p><strong>M1/M2 (Content):</strong> Chỉ dựa vào query text. <strong>M3 (CF):</strong> Chỉ dựa vào khách hàng mua chung (không quan tâm query). <strong>M5 (Hybrid):</strong> Lấy ứng viên từ CF rồi lọc lại bằng Query!</p>
+    `;
+    document.getElementById('compareInsight').style.display = 'block';
+  } catch(e) {
+    cols.forEach(id => document.getElementById(id).innerHTML = '<div class="empty-state">❌ Server offline</div>');
+  }
+}
+
+// ── CF Users ──────────────────────────────────────────────────────────────
+async function loadUsers() {
+  window.cfLoaded = true;
+  try {
+    const res = await fetch('/api/users');
+    const users = await res.json();
+    const el = document.getElementById('userList');
+    const select = document.getElementById('compareUser');
+    
+    el.innerHTML = users.map(u => `
+      <div class="user-item" onclick="selectUser('${u.user.replace(/'/g,"\\'")}', this)">
+        <div>
+          <div class="user-name">${u.user}</div>
+          <div class="user-meta">${u.n_products} sản phẩm khác nhau · ${u.total_qty} đơn vị</div>
+        </div>
+        <span class="tag tag-gold">${u.n_products} SP</span>
+      </div>
+    `).join('');
+
+    users.forEach(u => {
+      const opt = document.createElement('option');
+      opt.value = u.user;
+      opt.textContent = `${u.user} (${u.n_products} SP)`;
+      select.appendChild(opt);
+    });
+  } catch(e) {
+    document.getElementById('userList').innerHTML = '<div class="empty-state">❌ Server offline</div>';
+  }
+}
+
+async function selectUser(user, el) {
+  document.querySelectorAll('.user-item').forEach(u => u.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('cfEmpty').style.display = 'none';
+  document.getElementById('cfContent').style.display = 'block';
+  document.getElementById('cfUserName').textContent = user;
+  document.getElementById('cfUserMeta').textContent = 'Đang tải...';
+  document.getElementById('cfHistory').innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
+  document.getElementById('cfRecs').innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
+  document.getElementById('cfNeighbors').innerHTML = '';
+
+  try {
+    const res = await fetch('/api/recommend/cf', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({user, top_k:6})
+    });
+    const data = await res.json();
+    document.getElementById('cfUserMeta').textContent = `${data.history.length} sản phẩm đã mua · CF trong ${data.latency_ms}ms`;
+    document.getElementById('cfLatency').textContent = data.latency_ms + 'ms';
+
+    // Neighbors
+    if(data.neighbors && data.neighbors.length) {
+      document.getElementById('cfNeighbors').innerHTML = `
+        <div style="font-size:0.75rem;color:var(--muted);margin-bottom:8px;">🤝 Khách hàng tương đồng (dùng để CF):</div>
+        ${data.neighbors.map(n => `<span class="neighbor-tag">${n.user} (sim=${n.similarity})</span>`).join('')}
+      `;
+    }
+
+    // History
+    document.getElementById('cfHistory').innerHTML = data.history.slice(0,5).map(w => `
+      <div class="history-item">
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:600;font-size:0.82rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${w.name}</div>
+          <div style="font-size:0.72rem;color:var(--muted);">${w.type || ''}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:0.8rem;font-weight:700;color:var(--gold-l);">${w.price}</div>
+          <span class="history-qty">×${w.qty}</span>
+        </div>
+      </div>
+    `).join('') || '<div style="color:var(--muted);font-size:0.82rem;">Không có lịch sử</div>';
+
+    // Recs
+    if(!data.recommendations.length) {
+      document.getElementById('cfRecs').innerHTML = '<div style="color:var(--muted);font-size:0.82rem;">Chưa đủ dữ liệu để gợi ý</div>';
+    } else {
+      document.getElementById('cfRecs').innerHTML = data.recommendations.slice(0,6).map((w,i) => `
+        <div class="result-item ${i===0?'top':''}" onclick="showProduct('${w.sku}')">
+          <div class="result-rank">${i+1}</div>
+          <div class="result-body">
+            <div class="result-name">${w.name}</div>
+            <div class="result-type">${w.type||''} ${w.brand?'· '+w.brand:''}</div>
+            <div class="result-reason">💡 ${w.reason}</div>
+          </div>
+          <div class="result-right">
+            <div class="result-price">${w.price}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+  } catch(e) {
+    document.getElementById('cfContent').innerHTML = '<div class="empty-state">❌ Server offline</div>';
+  }
+}
+
+// ── Product Modal ─────────────────────────────────────────────────────────
+async function showProduct(sku) {
+  document.getElementById('productModal').classList.add('open');
+  document.getElementById('modalName').textContent = 'Đang tải...';
+  document.getElementById('modalDesc').textContent = '';
+  try {
+    const res = await fetch(`/api/product/${sku}`);
+    const w = await res.json();
+    document.getElementById('modalName').textContent = w.name;
+    document.getElementById('modalType').textContent = w.type || '';
+    document.getElementById('modalSku').textContent = w.sku;
+    document.getElementById('modalPrice').textContent = w.price;
+    document.getElementById('modalDesc').textContent = w.description_full || w.description || 'Không có mô tả';
+  } catch(e) {}
+}
+function closeModal() { document.getElementById('productModal').classList.remove('open'); }
+
+// ── Charts ────────────────────────────────────────────────────────────────
+function buildCharts() {
+  window.chartsBuilt = true;
+  // Recall@K curve
+  const c1 = document.getElementById('curveChart').getContext('2d');
+  charts.curve = new Chart(c1, {
+    type:'line',
+    data:{
+      labels:['K=1','K=5','K=10'],
+      datasets:[
+        {label:'BM25+ Enhanced',data:[0.80,2.40,3.80],borderColor:'#219ebc',pointRadius:6,tension:.3,borderWidth:2},
+        {label:'TIGER Greedy',data:[0.20,0.20,0.20],borderColor:'#e9c46a',pointRadius:6,tension:.3,borderWidth:2,borderDash:[5,5]},
+        {label:'🏆 TIGER+Price Rerank',data:[1.60,4.60,5.60],borderColor:'#e63946',backgroundColor:'rgba(230,57,70,.1)',fill:true,pointRadius:8,tension:.3,borderWidth:3},
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#aaa',font:{size:10}}}},
+      scales:{
+        x:{ticks:{color:'#888'},grid:{color:'rgba(255,255,255,.05)'}},
+        y:{ticks:{color:'#888',callback:v=>v+'%'},grid:{color:'rgba(255,255,255,.05)'},beginAtZero:true}
+      }
+    }
+  });
+
+  // Sapo CF vs no-history
+  const c2 = document.getElementById('sapoChart').getContext('2d');
+  charts.sapo = new Chart(c2, {
+    type:'bar',
+    data:{
+      labels:['TF-IDF\n(no hist)','BM25\n(no hist)','Collab.\nFilter','Session\nBased','Hybrid\nCF+Content'],
+      datasets:[
+        {label:'Recall@1',data:[1.33,0.67,56.00,10.00,11.33],backgroundColor:['#8ecae6','#219ebc','#3ddc57','#e9c46a','#e63946'],borderRadius:4},
+        {label:'Recall@10',data:[18.67,21.33,81.33,22.67,34.67],backgroundColor:['#8ecae688','#219ebc88','#3ddc5788','#e9c46a88','#e6394688'],borderRadius:4},
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#aaa',font:{size:10}},position:'top'}},
+      scales:{
+        x:{ticks:{color:'#888',font:{size:9}},grid:{color:'rgba(255,255,255,.05)'}},
+        y:{ticks:{color:'#888',callback:v=>v+'%'},grid:{color:'rgba(255,255,255,.05)'}},
+      }
+    }
+  });
+}
+
+// ── Load catalog stats ────────────────────────────────────────────────────
+async function loadStats() {
+  try {
+    const res = await fetch('/api/catalog/stats');
+    const d = await res.json();
+    document.getElementById('catalogInfo').innerHTML =
+      `✅ Server online · <strong>${d.n_products}</strong> Sapo SP · <strong>${d.n_users}</strong> KH · <strong>${d.n_winemag.toLocaleString()}</strong> Winemag`;
+    document.getElementById('statusText').textContent = `Online · ${d.n_products} SP`;
+  } catch(e) {
+    document.getElementById('catalogInfo').textContent = '❌ Không kết nối được server — hãy chạy: python demo/app.py';
+    document.getElementById('serverStatus').innerHTML = '<span class="status-dot" style="background:#e63946"></span><span id="statusText">Offline</span>';
+  }
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  loadStats();
+  document.getElementById('searchQuery').addEventListener('keydown', e => { if(e.key==='Enter') doSearch(); });
+  document.getElementById('compareQuery').addEventListener('keydown', e => { if(e.key==='Enter') doCompare(); });
+  doSearch();
+});
+</script>
+</body>
+</html>

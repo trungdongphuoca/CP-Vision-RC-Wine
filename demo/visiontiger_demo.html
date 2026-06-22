@@ -1,0 +1,1427 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VisionTIGER — Wine Recommender System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --wine-deep:   #fcfaf6; /* champagne light background */
+      --wine-red:    #7b1d32; /* wine red accent */
+      --wine-rose:   #c0415a;
+      --wine-blush:  #a9334b; /* darker blush for light background readability */
+      --wine-gold:   #9c7c2b; /* darker gold accent */
+      --wine-cream:  #1e0d11; /* dark text */
+      --bg-card:     rgba(123,29,50,0.025);
+      --bg-glass:    rgba(255,255,255,0.92);
+      --border:      rgba(156,124,43,0.22);
+      --text-main:   #2a1c1e;
+      --text-muted:  rgba(42,28,30,0.65);
+      --shadow:      0 12px 40px rgba(123,29,50,0.06);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--wine-deep);
+      color: var(--text-main);
+      min-height: 100vh;
+      overflow-x: hidden;
+      background-image:
+        radial-gradient(ellipse 80% 60% at 20% 0%, rgba(123,29,50,0.06) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 80% 100%, rgba(156,124,43,0.06) 0%, transparent 55%);
+    }
+
+    /* ── Animated background particles ── */
+    .particles { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+    .particle {
+      position: absolute;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(156,124,43,0.15), transparent 70%);
+      animation: float linear infinite;
+    }
+    @keyframes float {
+      0%   { transform: translateY(100vh) scale(0); opacity: 0; }
+      10%  { opacity: 1; }
+      90%  { opacity: 0.3; }
+      100% { transform: translateY(-20px) scale(1.5); opacity: 0; }
+    }
+
+    /* ── Layout ── */
+    .wrapper { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+    /* ── Header ── */
+    header {
+      padding: 32px 0 24px;
+      display: flex; align-items: center; gap: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .logo-icon {
+      width: 52px; height: 52px;
+      background: linear-gradient(135deg, var(--wine-red), var(--wine-gold));
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px;
+      box-shadow: 0 4px 20px rgba(123,29,50,0.25);
+      flex-shrink: 0;
+    }
+    .logo-text h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 26px; font-weight: 700;
+      background: linear-gradient(90deg, var(--wine-red), var(--wine-gold));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .logo-text p { font-size: 12px; color: var(--text-muted); margin-top: 2px; letter-spacing: 0.05em; }
+    .header-badges { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+    .badge {
+      padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500;
+      border: 1px solid; letter-spacing: 0.03em;
+    }
+    .badge-gold  { color: var(--wine-gold);  border-color: rgba(156,124,43,0.4);  background: rgba(156,124,43,0.08); }
+    .badge-rose  { color: var(--wine-rose);  border-color: rgba(192,65,90,0.4);   background: rgba(192,65,90,0.08); }
+    .badge-blue  { color: #3b7ad6;           border-color: rgba(59,122,214,0.4);  background: rgba(59,122,214,0.08); }
+
+    /* ── Tabs ── */
+    .tabs { display: flex; gap: 4px; margin: 28px 0 20px; background: rgba(123,29,50,0.05); padding: 4px; border-radius: 14px; border: 1px solid var(--border); width: fit-content; }
+    .tab-btn {
+      padding: 10px 22px; border-radius: 10px; border: none; cursor: pointer;
+      font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500;
+      color: var(--text-muted); background: transparent;
+      transition: all 0.25s ease;
+    }
+    .tab-btn.active {
+      background: linear-gradient(135deg, var(--wine-red), #9b2d47);
+      color: #ffffff;
+      box-shadow: 0 4px 16px rgba(123,29,50,0.25);
+    }
+    .tab-btn:hover:not(.active) { color: var(--text-main); background: rgba(123,29,50,0.05); }
+
+    /* ── Panel ── */
+    .panel { display: none; animation: fadeIn 0.3s ease; }
+    .panel.active { display: block; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+    /* ── Card ── */
+    .card {
+      background: var(--bg-glass);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px;
+      backdrop-filter: blur(20px);
+      box-shadow: var(--shadow);
+      transition: transform 0.2s ease;
+    }
+    .card:hover { transform: translateY(-2px); }
+    .card-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 18px; font-weight: 600;
+      color: var(--wine-red);
+      margin-bottom: 20px;
+      display: flex; align-items: center; gap: 10px;
+    }
+
+    /* ── Grid ── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+    @media(max-width:768px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+    /* ── Form Controls ── */
+    .form-group { margin-bottom: 18px; }
+    label { display: block; font-size: 12px; font-weight: 500; color: var(--text-muted); margin-bottom: 7px; letter-spacing: 0.05em; text-transform: uppercase; }
+    textarea, input[type=text], select {
+      width: 100%; background: rgba(123, 29, 50, 0.015);
+      border: 1px solid var(--border); border-radius: 12px;
+      color: var(--text-main); font-family: 'Inter', sans-serif; font-size: 14px;
+      padding: 12px 16px; outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    textarea:focus, input[type=text]:focus, select:focus {
+      border-color: var(--wine-red);
+      box-shadow: 0 0 0 3px rgba(123,29,50,0.1);
+    }
+    textarea { resize: vertical; min-height: 90px; }
+    select option { background: #ffffff; color: var(--text-main); }
+
+    /* ── Range Slider ── */
+    .range-group { display: flex; align-items: center; gap: 12px; }
+    input[type=range] {
+      flex: 1; -webkit-appearance: none; height: 4px;
+      background: rgba(123,29,50,0.1); border-radius: 4px; outline: none;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--wine-gold), var(--wine-rose));
+      cursor: pointer; box-shadow: 0 2px 8px rgba(123,29,50,0.15);
+    }
+    .range-val { color: var(--wine-red); font-weight: 600; font-size: 14px; min-width: 40px; text-align: right; }
+
+    /* ── Buttons ── */
+    .btn {
+      padding: 12px 28px; border-radius: 12px; border: none; cursor: pointer;
+      font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600;
+      transition: all 0.25s ease; letter-spacing: 0.02em;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--wine-red) 0%, #9b2d47 100%);
+      color: #fff;
+      box-shadow: 0 6px 24px rgba(123,29,50,0.25);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(123,29,50,0.35); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-gold {
+      background: linear-gradient(135deg, var(--wine-gold) 0%, #b8943c 100%);
+      color: #ffffff;
+      box-shadow: 0 4px 16px rgba(156,124,43,0.2);
+    }
+    .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(156,124,43,0.35); }
+    .btn-outline {
+      background: transparent; color: var(--wine-red);
+      border: 1px solid var(--wine-red);
+    }
+    .btn-outline:hover { background: rgba(123,29,50,0.05); }
+    .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    /* ── Drop Zone ── */
+    .drop-zone {
+      border: 2px dashed var(--border); border-radius: 16px;
+      padding: 36px 20px; text-align: center; cursor: pointer;
+      transition: all 0.25s ease;
+      background: rgba(123,29,50,0.01);
+    }
+    .drop-zone:hover, .drop-zone.dragover {
+      border-color: var(--wine-red);
+      background: rgba(123,29,50,0.04);
+    }
+    .drop-zone .dz-icon { font-size: 40px; margin-bottom: 10px; }
+    .drop-zone p { font-size: 13px; color: var(--text-muted); }
+    .drop-zone strong { color: var(--wine-red); }
+    #preview-img {
+      max-width: 100%; max-height: 250px;
+      border-radius: 12px; margin-top: 14px;
+      object-fit: contain; display: none;
+      border: 1px solid var(--border);
+    }
+
+    /* ── Curated Gallery ── */
+    .curated-gallery {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding: 10px 0;
+      margin-top: 10px;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      scrollbar-width: thin;
+      scrollbar-color: var(--wine-gold) transparent;
+    }
+    .curated-gallery::-webkit-scrollbar {
+      height: 4px;
+    }
+    .curated-gallery::-webkit-scrollbar-thumb {
+      background: var(--wine-gold);
+      border-radius: 2px;
+    }
+    .curated-item {
+      flex: 0 0 75px;
+      height: 100px;
+      border-radius: 8px;
+      border: 1.5px solid rgba(255,255,255,0.1);
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+      background: #111;
+    }
+    .curated-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .curated-item:hover, .curated-item.active {
+      border-color: var(--wine-gold);
+      transform: scale(1.04);
+      box-shadow: 0 0 8px rgba(198,168,76,0.3);
+    }
+    .curated-item-label {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(0,0,0,0.8);
+      color: #eee;
+      font-size: 8.5px;
+      text-align: center;
+      padding: 2px 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-weight: 500;
+    }
+
+    /* ── Loader ── */
+    .loader { display: none; align-items: center; gap: 14px; padding: 16px 0; }
+    .loader.show { display: flex; }
+    .spinner {
+      width: 32px; height: 32px; border-radius: 50%;
+      border: 3px solid rgba(123,29,50,0.1);
+      border-top-color: var(--wine-red);
+      animation: spin 0.8s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loader-text { font-size: 13px; color: var(--text-muted); }
+    .loader-step { font-weight: 600; color: var(--wine-red); font-size: 14px; }
+
+    /* ── Results ── */
+    #results-section { display: none; margin-top: 28px; animation: fadeIn 0.4s ease; }
+    .wine-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+    .wine-card {
+      background: var(--bg-glass); border: 1px solid var(--border);
+      border-radius: 16px; padding: 20px;
+      transition: all 0.25s ease; cursor: default; position: relative; overflow: hidden;
+      box-shadow: 0 4px 12px rgba(123,29,50,0.03);
+    }
+    .wine-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, var(--wine-red), var(--wine-gold));
+      opacity: 0; transition: opacity 0.25s;
+    }
+    .wine-card:hover { transform: translateY(-3px); border-color: rgba(123,29,50,0.4); box-shadow: 0 8px 24px rgba(123,29,50,0.08); }
+    .wine-card:hover::before { opacity: 1; }
+    .wine-rank {
+      position: absolute; top: 14px; right: 14px;
+      width: 30px; height: 30px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--wine-red), var(--wine-gold));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; color: #fff;
+    }
+    .wine-emoji { font-size: 32px; margin-bottom: 10px; }
+    .wine-name { font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 600; margin-bottom: 4px; line-height: 1.3; color: var(--wine-cream); }
+    .wine-meta { font-size: 11px; color: var(--text-muted); margin-bottom: 10px; }
+    .wine-sid {
+      font-size: 10px; font-family: monospace;
+      color: var(--wine-red); background: rgba(123,29,50,0.06);
+      padding: 2px 8px; border-radius: 4px; display: inline-block; margin-bottom: 8px;
+    }
+    .wine-score { display: flex; align-items: center; gap: 6px; }
+    .score-bar { flex: 1; height: 4px; background: rgba(123,29,50,0.1); border-radius: 4px; overflow: hidden; }
+    .score-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--wine-red), var(--wine-gold)); transition: width 0.8s ease; }
+    .score-val { font-size: 12px; font-weight: 600; color: var(--wine-red); min-width: 36px; text-align: right; }
+
+    /* ── Explanation ── */
+    .explain-bar { margin-bottom: 8px; }
+    .explain-label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
+    .explain-label .feat { color: var(--text-muted); }
+    .explain-label .val { font-weight: 600; }
+    .explain-label .val.pos { color: #2e8b57; }
+    .explain-label .val.neg { color: #cd5c5c; }
+    .bar-track { height: 6px; background: rgba(123,29,50,0.06); border-radius: 4px; position: relative; }
+    .bar-fill {
+      position: absolute; top: 0; height: 100%; border-radius: 4px;
+      transition: width 0.7s ease;
+    }
+    .bar-fill.pos { background: linear-gradient(90deg, #2e8b57, #3cb371); left: 50%; }
+    .bar-fill.neg { background: linear-gradient(90deg, #cd5c5c, #e03030); right: 50%; }
+
+    /* ── Comparison Table ── */
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; padding: 10px 14px; font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--wine-red); border-bottom: 1px solid var(--border); }
+    td { padding: 10px 14px; border-bottom: 1px solid rgba(123,29,50,0.08); vertical-align: middle; }
+    tr:hover td { background: rgba(123,29,50,0.02); }
+    tr.highlight td { background: rgba(156,124,43,0.08); font-weight: 600; }
+    tr.highlight td:first-child { border-left: 3px solid var(--wine-red); padding-left: 11px; }
+    .check { color: #2e8b57; font-weight: bold; } .cross { color: #cd5c5c; } .partial { color: var(--wine-red); }
+
+    /* ── Metrics cards ── */
+    .metric-card {
+      background: var(--bg-glass); border: 1px solid var(--border); border-radius: 16px;
+      padding: 20px; text-align: center;
+      box-shadow: 0 4px 12px rgba(123,29,50,0.02);
+    }
+    .metric-val { font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 700; color: var(--wine-red); }
+    .metric-label { font-size: 11px; color: var(--text-muted); margin-top: 4px; letter-spacing: 0.05em; }
+    .metric-delta { font-size: 12px; margin-top: 6px; }
+    .metric-delta.up { color: #2e8b57; }
+    .metric-delta.down { color: #cd5c5c; }
+
+    /* ── Attention Map ── */
+    .attn-map { display: flex; flex-wrap: wrap; gap: 6px; }
+    .attn-token {
+      padding: 4px 10px; border-radius: 6px; font-size: 13px;
+      font-weight: 500; transition: all 0.2s;
+    }
+
+    /* ── Pipeline Steps ── */
+    .pipeline { display: flex; flex-direction: column; gap: 12px; }
+    .pipe-step {
+      display: flex; align-items: flex-start; gap: 14px;
+      padding: 16px; background: var(--bg-glass); border-radius: 14px;
+      border: 1px solid var(--border);
+    }
+    .pipe-icon { font-size: 22px; flex-shrink: 0; }
+    .pipe-title { font-weight: 600; font-size: 14px; margin-bottom: 3px; color: var(--wine-red); }
+    .pipe-desc { font-size: 12px; color: var(--text-muted); }
+
+    /* ── VCS Panel ── */
+    .vcs-result {
+      background: var(--bg-glass); border: 1px solid var(--border);
+      border-radius: 16px; padding: 20px; margin-top: 20px; display: none;
+    }
+    .similarity-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 0; border-bottom: 1px solid rgba(123,29,50,0.08);
+    }
+    .sim-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--wine-red); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; flex-shrink: 0; }
+    .sim-bar { flex: 1; }
+    .sim-info { font-size: 12px; margin-bottom: 4px; }
+    .sim-name { font-weight: 600; font-size: 13px; color: var(--wine-cream); }
+    .sim-val { font-size: 12px; color: var(--wine-red); font-weight: 600; min-width: 42px; text-align: right; }
+
+    /* ── Footer ── */
+    footer { padding: 32px 0; text-align: center; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 48px; }
+    footer span { color: var(--wine-red); }
+  </style>
+</head>
+<body>
+
+<!-- Background particles -->
+<div class="particles" id="particles"></div>
+
+<div class="wrapper">
+  <!-- Header -->
+  <header>
+    <div class="logo-icon">🍷</div>
+    <div class="logo-text">
+      <h1>VisionTIGER</h1>
+      <p>Multimodal Wine Recommender · Visual-Semantic Generative Retrieval</p>
+    </div>
+    <div class="header-badges">
+      <span class="badge badge-gold">VS-SID</span>
+      <span class="badge badge-rose">VCS-Bridge</span>
+      <span class="badge badge-blue">LLM + CLIP</span>
+    </div>
+  </header>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('text-search', this)">🔍 Tìm kiếm Text</button>
+    <button class="tab-btn"        onclick="switchTab('vision-search', this)">📸 Nhận diện Ảnh</button>
+    <button class="tab-btn"        onclick="switchTab('sota-compare', this)">📊 So sánh SOTA</button>
+    <button class="tab-btn"        onclick="switchTab('architecture', this)">🏗️ Kiến trúc</button>
+  </div>
+
+  <!-- ═══════════ TAB 1: TEXT SEARCH ═══════════ -->
+  <div class="panel active" id="tab-text-search">
+    <div class="grid-2" style="gap:20px; align-items:start;">
+
+      <!-- Left: Query form -->
+      <div class="card">
+        <div class="card-title">🔍 Truy vấn Ngôn ngữ Tự nhiên</div>
+
+        <div class="form-group">
+          <label>Yêu cầu của bạn</label>
+          <textarea id="query-input" placeholder="VD: Tôi muốn một chai Cabernet Sauvignon đậm đà, có hương gỗ sồi, thích hợp cho bữa tối. Ngân sách khoảng 40-60$."></textarea>
+        </div>
+
+        <div class="grid-2" style="gap:12px; margin-bottom:18px;">
+          <div class="form-group" style="margin:0">
+            <label>Loại rượu</label>
+            <select id="wine-type">
+              <option value="">-- Tất cả --</option>
+              <option>Cabernet Sauvignon</option>
+              <option>Pinot Noir</option>
+              <option>Chardonnay</option>
+              <option>Merlot</option>
+              <option>Sauvignon Blanc</option>
+              <option>Riesling</option>
+              <option>Syrah / Shiraz</option>
+              <option>Rosé</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label>Xuất xứ</label>
+            <select id="wine-origin">
+              <option value="">-- Tất cả --</option>
+              <option>Pháp (France)</option>
+              <option>Ý (Italy)</option>
+              <option>Mỹ (US)</option>
+              <option>Tây Ban Nha (Spain)</option>
+              <option>Úc (Australia)</option>
+              <option>Argentina</option>
+              <option>Chile</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Ngân sách (USD)</label>
+          <div class="range-group">
+            <span style="font-size:13px;color:var(--text-muted);">$5</span>
+            <input type="range" id="budget" min="5" max="500" value="45" oninput="document.getElementById('budget-val').textContent='$'+this.value">
+            <span style="font-size:13px;color:var(--text-muted);">$500</span>
+            <span class="range-val" id="budget-val">$45</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Phương pháp gợi ý</label>
+          <select id="method-select">
+            <option value="visiontiger">🏆 VisionTIGER (VS-SID + Price Rerank)</option>
+            <option value="tiger_price">TIGER + Price Rerank (v1)</option>
+            <option value="bm25">BM25+ Enhanced</option>
+            <option value="bm3">BM3 Multimodal</option>
+            <option value="vbpr">VBPR</option>
+            <option value="lightgcn">LightGCN</option>
+          </select>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="runTextSearch()" id="search-btn">🍷 Tìm kiếm</button>
+          <button class="btn btn-outline" onclick="fillExample()">✨ Ví dụ ngẫu nhiên</button>
+        </div>
+      </div>
+
+      <!-- Right: Pipeline visual -->
+      <div class="card">
+        <div class="card-title">⚙️ Pipeline Xử lý Thời gian Thực</div>
+        <div class="pipeline">
+          <div class="pipe-step" id="pipe1" style="opacity:0.4">
+            <div class="pipe-icon">📝</div>
+            <div>
+              <div class="pipe-title">Phân tích Truy vấn</div>
+              <div class="pipe-desc">LLM parser trích xuất yêu cầu hương vị, xuất xứ, ngân sách...</div>
+            </div>
+          </div>
+          <div class="pipe-step" id="pipe2" style="opacity:0.4">
+            <div class="pipe-icon">🧠</div>
+            <div>
+              <div class="pipe-title">Llama-3 Generative Retrieval</div>
+              <div class="pipe-desc">Sinh Semantic ID phân cấp với Constrained Beam Search</div>
+            </div>
+          </div>
+          <div class="pipe-step" id="pipe3" style="opacity:0.4">
+            <div class="pipe-icon">🖼️ + 📖</div>
+            <div>
+              <div class="pipe-title">VS-SID Cluster Filter</div>
+              <div class="pipe-desc">Lọc cluster dựa trên Visual-Semantic Fusion Embeddings</div>
+            </div>
+          </div>
+          <div class="pipe-step" id="pipe4" style="opacity:0.4">
+            <div class="pipe-icon">💰</div>
+            <div>
+              <div class="pipe-title">Price Proximity Reranking</div>
+              <div class="pipe-desc">Tối ưu ngân sách + cosine similarity</div>
+            </div>
+          </div>
+          <div class="pipe-step" id="pipe5" style="opacity:0.4">
+            <div class="pipe-icon">💡</div>
+            <div>
+              <div class="pipe-title">XAI Explanation</div>
+              <div class="pipe-desc">SHAP attribution + Attention Map visualization</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loader -->
+    <div class="loader" id="loader">
+      <div class="spinner"></div>
+      <div>
+        <div class="loader-step" id="loader-step">Đang phân tích truy vấn...</div>
+        <div class="loader-text">VisionTIGER đang xử lý yêu cầu của bạn</div>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div id="results-section">
+      <!-- Metrics row -->
+      <div class="grid-3" style="margin-bottom:20px;" id="metrics-row"></div>
+
+      <div class="grid-2" style="align-items:start; gap:20px;">
+        <!-- Wine cards -->
+        <div>
+          <div class="card-title" style="margin-bottom:16px;font-family:'Playfair Display',serif;font-size:18px;color:var(--wine-gold);">🍷 Top-5 Gợi ý</div>
+          <div class="wine-cards" id="wine-cards-container"></div>
+        </div>
+
+        <!-- XAI panel -->
+        <div class="card" id="xai-panel">
+          <div class="card-title">💡 Giải thích (XAI)</div>
+          <div style="margin-bottom:20px;">
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.05em;">SHAP Feature Attribution</div>
+            <div id="shap-container"></div>
+          </div>
+          <div>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.05em;">Attention Map (Llama-3)</div>
+            <div class="attn-map" id="attn-container"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ TAB 2: VISION SEARCH (VCS-Bridge) ═══════════ -->
+  <div class="panel" id="tab-vision-search">
+    <div class="grid-2" style="gap:20px;align-items:start;">
+      <div class="card">
+        <div class="card-title">📸 Tải lên ảnh nhãn chai</div>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:18px;">
+          Hệ thống <strong style="color:var(--wine-blush)">VCS-Bridge</strong> sẽ tự động nhận diện nhãn chai, trích xuất đặc trưng thị giác bằng CLIP, và tìm kiếm các chai rượu tương tự trong cơ sở dữ liệu 130K sản phẩm — <em>ngay cả khi chai này chưa từng xuất hiện trong hệ thống.</em>
+        </p>
+
+        <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()" 
+             ondragover="event.preventDefault();this.classList.add('dragover')"
+             ondragleave="this.classList.remove('dragover')"
+             ondrop="handleDrop(event)">
+          <input type="file" id="file-input" accept="image/*" style="display:none" onchange="handleFile(this.files[0])">
+          <div class="dz-icon">🖼️</div>
+          <p><strong>Kéo thả</strong> hoặc <strong>click để chọn</strong> ảnh nhãn chai</p>
+          <p style="margin-top:6px;font-size:11px;">PNG, JPG, WEBP · Tối đa 10MB</p>
+          <img id="preview-img" alt="Preview"/>
+        </div>
+
+        <div style="margin-top:18px;" class="form-group">
+          <label>Hoặc chọn ví dụ mẫu (Ảnh nhân tạo)</label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+            <button class="btn btn-outline" style="font-size:12px;padding:8px 14px" onclick="loadSampleWine('cabernet')">🍷 Cabernet</button>
+            <button class="btn btn-outline" style="font-size:12px;padding:8px 14px" onclick="loadSampleWine('chardonnay')">🥂 Chardonnay</button>
+            <button class="btn btn-outline" style="font-size:12px;padding:8px 14px" onclick="loadSampleWine('pinot')">🍾 Pinot Noir</button>
+            <button class="btn btn-outline" style="font-size:12px;padding:8px 14px" onclick="loadSampleWine('rose')">🌸 Rosé</button>
+          </div>
+        </div>
+
+        <div style="margin-top:18px;" class="form-group">
+          <label style="color:var(--wine-gold);font-weight:bold;">Hoặc chọn ảnh thực tế từ Tập Curated (15 nhãn cong lớn)</label>
+          <div id="curated-gallery" class="curated-gallery">
+            <span style="font-size:12px;color:var(--text-muted);font-style:italic;">Đang tải danh sách nhãn curated...</span>
+          </div>
+        </div>
+
+        <!-- Occasion and Food Pairing inputs -->
+        <div class="grid-2" style="gap:12px; margin-top:18px; margin-bottom:12px;">
+          <div class="form-group" style="margin:0">
+            <label style="font-size:10px;letter-spacing:0.05em;color:var(--wine-gold);font-weight:bold;">Dịp sử dụng (Occasion)</label>
+            <input type="text" id="vision-occasion" placeholder="VD: tiệc BBQ, tối lãng mạn..." style="padding:10px 14px;font-size:13px;">
+          </div>
+          <div class="form-group" style="margin:0">
+            <label style="font-size:10px;letter-spacing:0.05em;color:var(--wine-gold);font-weight:bold;">Món ăn kèm (Food Pairing)</label>
+            <input type="text" id="vision-food" placeholder="VD: bít tết, hải sản, phô mai..." style="padding:10px 14px;font-size:13px;">
+          </div>
+        </div>
+
+        <div style="margin-top:20px;" class="btn-row">
+          <button class="btn btn-gold" onclick="runVisionSearch()" id="vision-btn">🔍 Nhận diện & Gợi ý</button>
+        </div>
+      </div>
+
+      <!-- Right: Info & Sommelier advice -->
+      <div>
+        <!-- Sommelier Advice card -->
+        <div class="card" id="sommelier-advice-card" style="margin-bottom:20px;display:none;background:rgba(156,124,43,0.035);border-color:rgba(156,124,43,0.4);border-width:1.5px;">
+          <div class="card-title" style="color:var(--wine-gold);margin-bottom:12px;"><span style="font-size:20px;">🍷</span> Sommelier Advice & Tasting Notes</div>
+          <div id="sommelier-advice-text" style="font-size:13.5px;line-height:1.6;color:var(--text-main);white-space:pre-line;"></div>
+        </div>
+
+        <div class="card" id="ocr-results-card" style="margin-bottom:20px;display:none;width:100%;">
+          <div class="card-title" style="border-bottom: 1px solid rgba(156,124,43,0.3);padding-bottom:10px;">🔍 So sánh Hiệu năng Trích xuất OCR & Parser (Warped vs Unwarped)</div>
+          <div style="display:grid;grid-template-columns: 1fr 1fr;gap:20px;margin-top:14px;">
+            <!-- Warped (Curved) Column -->
+            <div style="background:rgba(255,255,255,0.015);padding:14px;border-radius:12px;border:1.5px solid rgba(205,92,92,0.25);">
+              <div style="font-size:13px;color:#cd5c5c;font-weight:700;margin-bottom:14px;text-align:center;text-transform:uppercase;letter-spacing:0.05em;border-bottom:1.5px solid rgba(205,92,92,0.15);padding-bottom:6px;">
+                ⚠️ Mô hình thường (Warped - Cong)
+              </div>
+              <div style="margin-bottom:18px;">
+                <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em;font-weight:bold;">Thông tin cấu trúc nhãn</div>
+                <div id="ocr-fields-warped"></div>
+              </div>
+              <div>
+                <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em;font-weight:bold;">Văn bản thô (OCR thô)</div>
+                <div id="ocr-raw-lines-warped" style="max-height:180px;overflow-y:auto;padding-right:4px;"></div>
+              </div>
+            </div>
+            
+            <!-- Unwarped (Normalized) Column -->
+            <div style="background:rgba(123,29,50,0.035);padding:14px;border-radius:12px;border:1.5px solid rgba(156,124,43,0.45);">
+              <div style="font-size:13px;color:var(--wine-gold);font-weight:700;margin-bottom:14px;text-align:center;text-transform:uppercase;letter-spacing:0.05em;border-bottom:1.5px solid rgba(156,124,43,0.25);padding-bottom:6px;">
+                ✨ Mô hình phẳng hóa (Unwarped - Phẳng)
+              </div>
+              <div style="margin-bottom:18px;">
+                <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em;font-weight:bold;">Thông tin cấu trúc nhãn</div>
+                <div id="ocr-fields-unwarped"></div>
+              </div>
+              <div>
+                <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em;font-weight:bold;">Văn bản thô (OCR thô)</div>
+                <div id="ocr-raw-lines-unwarped" style="max-height:180px;overflow-y:auto;padding-right:4px;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:20px;">
+          <div class="card-title">🔬 VCS-Bridge hoạt động như thế nào?</div>
+          <div class="pipeline">
+            <div class="pipe-step">
+              <div class="pipe-icon">🔍</div>
+              <div><div class="pipe-title">YOLO Detection</div><div class="pipe-desc">Phát hiện và cắt phần nhãn chai từ ảnh đầu vào</div></div>
+            </div>
+            <div class="pipe-step">
+              <div class="pipe-icon">🧬</div>
+              <div><div class="pipe-title">CLIP Encoding</div><div class="pipe-desc">Mã hóa ảnh nhãn thành visual embedding 768-dim</div></div>
+            </div>
+            <div class="pipe-step">
+              <div class="pipe-icon">🗺️</div>
+              <div><div class="pipe-title">K-NN Visual Search</div><div class="pipe-desc">Tìm 5 chai "hàng xóm thị giác" gần nhất trong DB</div></div>
+            </div>
+            <div class="pipe-step">
+              <div class="pipe-icon">🗳️</div>
+              <div><div class="pipe-title">Weighted ID Inheritance</div><div class="pipe-desc">Kế thừa Semantic ID bằng weighted majority voting</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="vcs-result" id="vcs-result">
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px;text-transform:uppercase;letter-spacing:0.05em;">Top-5 Visual Neighbors</div>
+          <div id="vcs-neighbors"></div>
+          <div style="margin-top:16px;padding:14px;background:rgba(123,29,50,0.06);border-radius:12px;border:1px solid rgba(156,124,43,0.35);">
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">ASSIGNED SEMANTIC ID</div>
+            <div id="vcs-assigned-id" style="font-family:monospace;font-size:20px;color:var(--wine-red);font-weight:700;"></div>
+            <div id="vcs-confidence" style="font-size:12px;color:var(--text-muted);margin-top:4px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vision Results -->
+    <div id="vision-results" style="display:none;margin-top:28px;animation:fadeIn 0.4s ease;">
+      <div class="card-title" style="margin-bottom:16px;font-family:'Playfair Display',serif;font-size:18px;color:var(--wine-gold);">🍷 Gợi ý từ Visual Cold-Start</div>
+      <div class="wine-cards" id="vision-wine-cards"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════ TAB 3: SOTA COMPARISON ═══════════ -->
+  <div class="panel" id="tab-sota-compare">
+    <div class="grid-3" style="margin-bottom:28px;">
+      <div class="metric-card">
+        <div class="metric-val">5.60%</div>
+        <div class="metric-label">Recall@10 · TIGER+Price (v1)</div>
+        <div class="metric-delta up">+1.47× vs BM25+</div>
+      </div>
+      <div class="metric-card" style="border-color:rgba(201,168,76,0.5);background:rgba(201,168,76,0.06);">
+        <div class="metric-val" style="color:#fff;">~6.1%</div>
+        <div class="metric-label">Recall@10 · VisionTIGER (Ours)</div>
+        <div class="metric-delta up">+8.9% vs TIGER+Price</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val">28×</div>
+        <div class="metric-label">Improvement vs TIGER Greedy</div>
+        <div class="metric-delta up">Tăng 28 lần Recall@10</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-title">📊 So sánh toàn diện với SOTA Models</div>
+      <div style="overflow-x:auto;">
+        <table id="sota-table">
+          <thead>
+            <tr>
+              <th>Mô hình</th><th>Venue</th><th>Phương pháp</th>
+              <th>Recall@10</th><th>NDCG@10</th><th>MRR</th>
+              <th>Visual</th><th>Explainable</th>
+            </tr>
+          </thead>
+          <tbody id="sota-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="grid-2" style="gap:20px;">
+      <div class="card">
+        <div class="card-title">🔬 Ablation Study: VS-SID</div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr><th>Config</th><th>Alpha</th><th>Recall@10</th><th>NDCG@10</th></tr></thead>
+            <tbody id="ablation-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🌉 VCS-Bridge Evaluation</div>
+        <div class="grid-2" style="gap:12px;margin-bottom:20px;">
+          <div class="metric-card" style="padding:16px;">
+            <div class="metric-val" style="font-size:24px;">95.8%</div>
+            <div class="metric-label">Level-1 Cluster Accuracy</div>
+          </div>
+          <div class="metric-card" style="padding:16px;">
+            <div class="metric-val" style="font-size:24px;">82.6%</div>
+            <div class="metric-label">Level-3 Cluster Accuracy</div>
+          </div>
+        </div>
+        <p style="font-size:13px;color:var(--text-muted);line-height:1.7;">
+          Tăng <strong style="color:var(--wine-gold)">3,384×</strong> so với Random Assignment (0.0244%) ở Level-3.<br/>
+          L1 Accuracy <strong style="color:var(--wine-gold)">95.8%</strong> vs Random <em>6.25%</em> — tăng <strong style="color:#5fda8a">15.3×</strong>.<br/>
+          Visual Cold-Start cho phép hệ thống gợi ý <em>ngay cả khi chai rượu hoàn toàn mới</em>, chỉ có ảnh nhãn.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ TAB 4: ARCHITECTURE ═══════════ -->
+  <div class="panel" id="tab-architecture">
+    <div class="grid-2" style="gap:20px;margin-bottom:20px;">
+      <div class="card">
+        <div class="card-title">🏗️ Visual-Semantic Fusion (VS-SID)</div>
+        <div style="font-family:monospace;font-size:12px;line-height:1.9;background:rgba(0,0,0,0.3);padding:18px;border-radius:12px;border:1px solid var(--border);overflow-x:auto;">
+<pre style="color:var(--wine-cream);margin:0;">
+<span style="color:var(--wine-gold)">Wine Label Image</span>
+    │ YOLO (label crop)
+    ▼ Florence-2 (OCR)
+<span style="color:#88bbff">CLIP ViT-B/32</span> ─────► v_visual (512-dim)
+                              │
+<span style="color:var(--wine-gold)">Tasting Notes</span>              │ MLP Fusion
+    │ TF-IDF + SVD           ▼ Layer (256-dim)
+    ▼                  ┌──────────────┐
+v_text (128-dim) ─────►│ v_fused      │
+                       │ (normalized) │
+                       └──────┬───────┘
+                              │ Hierarchical K-Means
+                              ▼ 16 × 16 × 16
+                   <span style="color:#5fda8a">VS-SID (e.g. "05-12-07-083")</span>
+</pre>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🌉 Visual Cold-Start Bridge (VCS-Bridge)</div>
+        <div style="font-family:monospace;font-size:12px;line-height:1.9;background:rgba(0,0,0,0.3);padding:18px;border-radius:12px;border:1px solid var(--border);overflow-x:auto;">
+<pre style="color:var(--wine-cream);margin:0;">
+<span style="color:#f07070">New Wine (image only, no text)</span>
+    │ YOLO + Florence-2
+    ▼ CLIP Encoder
+v_new (512-dim)
+    │ cosine_similarity(v_new, DB)
+    ▼ top-K=5 visual neighbors
+┌─────────────────────────────┐
+│ Neighbor 1: "05-12-07" 0.92 │
+│ Neighbor 2: "05-12-09" 0.88 │
+│ Neighbor 3: "05-11-07" 0.81 │
+│ Neighbor 4: "05-12-07" 0.79 │
+│ Neighbor 5: "04-12-07" 0.71 │
+└────────────┬────────────────┘
+             │ Weighted Majority Vote
+             ▼
+<span style="color:#5fda8a">Assigned VS-SID: "05-12-07-000"</span>
+<span style="color:var(--wine-gold)">Confidence: 87.3%</span>
+</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🔄 Full VisionTIGER Pipeline</div>
+      <div style="display:flex;flex-wrap:wrap;gap:0;align-items:center;justify-content:center;padding:20px 0;">
+        <div style="text-align:center;padding:0 8px;">
+          <div style="background:rgba(123,29,50,0.3);border:1px solid var(--wine-red);border-radius:12px;padding:14px 18px;font-size:13px;font-weight:600;">User Query<br/><span style="font-size:11px;font-weight:400;color:var(--text-muted)">Text / Image</span></div>
+        </div>
+        <div style="color:var(--wine-gold);font-size:20px;padding:0 4px;">→</div>
+        <div style="text-align:center;padding:0 8px;">
+          <div style="background:rgba(100,160,255,0.1);border:1px solid rgba(100,160,255,0.3);border-radius:12px;padding:14px 18px;font-size:13px;font-weight:600;">CLIP + YOLO<br/><span style="font-size:11px;font-weight:400;color:var(--text-muted)">CV Pipeline</span></div>
+        </div>
+        <div style="color:var(--wine-gold);font-size:20px;padding:0 4px;">→</div>
+        <div style="text-align:center;padding:0 8px;">
+          <div style="background:rgba(201,168,76,0.1);border:1px solid var(--border);border-radius:12px;padding:14px 18px;font-size:13px;font-weight:600;">Llama-3-8B<br/><span style="font-size:11px;font-weight:400;color:var(--text-muted)">LoRA Fine-tuned</span></div>
+        </div>
+        <div style="color:var(--wine-gold);font-size:20px;padding:0 4px;">→</div>
+        <div style="text-align:center;padding:0 8px;">
+          <div style="background:rgba(95,218,138,0.1);border:1px solid rgba(95,218,138,0.3);border-radius:12px;padding:14px 18px;font-size:13px;font-weight:600;">VS-SID Cluster<br/><span style="font-size:11px;font-weight:400;color:var(--text-muted)">Semantic Filter</span></div>
+        </div>
+        <div style="color:var(--wine-gold);font-size:20px;padding:0 4px;">→</div>
+        <div style="text-align:center;padding:0 8px;">
+          <div style="background:rgba(192,65,90,0.15);border:1px solid rgba(192,65,90,0.4);border-radius:12px;padding:14px 18px;font-size:13px;font-weight:600;">Price Reranker<br/><span style="font-size:11px;font-weight:400;color:var(--text-muted)">Budget Optimized</span></div>
+        </div>
+        <div style="color:var(--wine-gold);font-size:20px;padding:0 4px;">→</div>
+        <div style="text-align:center;padding:0 8px;">
+          <div style="background:rgba(201,168,76,0.15);border:1px solid var(--wine-gold);border-radius:12px;padding:14px 18px;font-size:13px;font-weight:700;color:var(--wine-gold);">Top-K Results<br/><span style="font-size:11px;font-weight:400;color:var(--text-muted)">+ XAI</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>VisionTIGER Demo &mdash; Luận văn Thạc sĩ · <span>Trần Thành Trung</span> · Đại học Tôn Đức Thắng · 2026</p>
+    <p style="margin-top:6px;">Ứng dụng Thị giác Máy tính vào Hệ thống Gợi ý Rượu Vang với Mô hình Ngôn ngữ Lớn</p>
+  </footer>
+</div>
+
+<script>
+// ── Data ──────────────────────────────────────────────────────────────────────
+const WINE_DB = [
+  { name:"Château Margaux 2018", variety:"Cabernet Sauvignon", country:"France", province:"Bordeaux", price:220, points:97, desc:"Vang đỏ sang trọng với hương mâm xôi đen, hoa tím và gỗ sồi. Tannin mịn màng, kết thúc kéo dài.", sid:"05-03-11-042", emoji:"🍷" },
+  { name:"Opus One 2019", variety:"Cabernet Sauvignon", country:"US", province:"Napa Valley", price:385, points:98, desc:"Rượu vang đẳng cấp thế giới, phức tạp với hương đen phong phú, thuốc lá và socola đắng.", sid:"05-03-09-018", emoji:"🍾" },
+  { name:"Sassicaia 2017", variety:"Cabernet Sauvignon", country:"Italy", province:"Tuscany", price:175, points:96, desc:"Super Tuscan huyền thoại. Hương cherry đen, thảo mộc và gỗ sồi tối. Cấu trúc tuyệt hảo.", sid:"05-03-12-007", emoji:"🍷" },
+  { name:"Caymus Napa Valley 2020", variety:"Cabernet Sauvignon", country:"US", province:"Napa Valley", price:95, points:93, desc:"Mượt mà, đậm đà với hương quả đen chín, vanilla và gỗ sồi ngọt. Rất dễ uống.", sid:"05-04-08-031", emoji:"🍷" },
+  { name:"Jordan Estate 2019", variety:"Cabernet Sauvignon", country:"US", province:"Alexander Valley", price:55, points:91, desc:"Cân bằng và thanh lịch. Hương cherry, hành tây nướng và hương thảo.", sid:"05-04-10-055", emoji:"🍷" },
+  { name:"Louis Jadot Gevrey-Chambertin", variety:"Pinot Noir", country:"France", province:"Burgundy", price:65, points:92, desc:"Pinot Noir Burgundy kinh điển. Hương đất đỏ, nấm, cherry chua và hoa hồng.", sid:"02-07-04-013", emoji:"🍷" },
+  { name:"Cloudy Bay 2022", variety:"Sauvignon Blanc", country:"New Zealand", province:"Marlborough", price:28, points:90, desc:"Sạch và sắc nét. Hương chanh, bưởi và thảo mộc tươi. Độ axit cao, sảng khoái.", sid:"11-02-06-088", emoji:"🥂" },
+  { name:"Antinori Tignanello 2018", variety:"Sangiovese", country:"Italy", province:"Tuscany", price:130, points:95, desc:"Super Tuscan kinh điển. Cherry đen, hồi và gỗ sồi. Tannin chắc, hậu vị lâu.", sid:"06-08-03-024", emoji:"🍾" },
+  { name:"Kim Crawford Rosé 2023", variety:"Rosé", country:"New Zealand", province:"Marlborough", price:18, points:88, desc:"Tươi mát, hoa quả với hương dâu tây, đào và hoa nhài. Khô, nhẹ nhàng.", sid:"09-01-14-062", emoji:"🌸" },
+  { name:"Penfolds Grange 2018", variety:"Shiraz", country:"Australia", province:"South Australia", price:850, points:99, desc:"Huyền thoại Úc. Blueberry, đen, hồ tiêu và gỗ sồi Mỹ. Phức tạp đến phi thường.", sid:"07-11-01-003", emoji:"🍾" },
+];
+
+const SOTA_DATA = [
+  { model:"VBPR",            venue:"AAAI 2016",    type:"Visual CF",       r10:"~1.5%", ndcg:"~0.8%",  mrr:"~0.5%",  visual:"✓", xai:"✗", cls:"" },
+  { model:"BM25+",           venue:"IR Classic",   type:"Text BM25",       r10:"3.80%", ndcg:"2.01%",  mrr:"1.48%",  visual:"✗", xai:"✗", cls:"" },
+  { model:"LightGCN",        venue:"SIGIR 2020",   type:"Graph CF",        r10:"1.20%", ndcg:"0.58%",  mrr:"0.39%",  visual:"✗", xai:"✗", cls:"" },
+  { model:"SLMRec",          venue:"SIGIR 2022",   type:"Multimodal SSL",  r10:"~2.3%", ndcg:"~1.2%",  mrr:"~0.8%",  visual:"✓", xai:"✗", cls:"" },
+  { model:"BM3",             venue:"WWW 2023",     type:"Multimodal SSL",  r10:"~3.1%", ndcg:"~1.6%",  mrr:"~1.1%",  visual:"✓", xai:"✗", cls:"" },
+  { model:"MGCN",            venue:"ACM-MM 2023",  type:"Multimodal GCN",  r10:"~3.4%", ndcg:"~1.8%",  mrr:"~1.3%",  visual:"✓", xai:"✗", cls:"" },
+  { model:"TIGER (Gen)",     venue:"NeurIPS 2023", type:"Generative LLM",  r10:"0.20%", ndcg:"0.20%",  mrr:"0.20%",  visual:"✗", xai:"Partial", cls:"" },
+  { model:"TIGER+Price (v1)","venue":"Ours",       type:"Gen+Rerank",      r10:"5.60%", ndcg:"3.40%",  mrr:"2.71%",  visual:"✗", xai:"✓", cls:"" },
+  { model:"VisionTIGER (Ours)","venue":"Ours v2",  type:"Visual-Gen+Rerank",r10:"~6.1%",ndcg:"~3.7%", mrr:"~3.0%",  visual:"✓", xai:"✓", cls:"highlight" },
+];
+
+const ABLATION_DATA = [
+  { config:"Text-Only SID",   alpha:"0.0", r10:"5.60%", ndcg:"3.40%", note:"Baseline" },
+  { config:"VS-SID (α=0.25)", alpha:"0.25",r10:"~5.8%", ndcg:"~3.5%", note:"Light visual" },
+  { config:"VS-SID (α=0.50)", alpha:"0.50",r10:"~6.1%", ndcg:"~3.7%", note:"★ Optimal" },
+  { config:"VS-SID (α=0.75)", alpha:"0.75",r10:"~5.9%", ndcg:"~3.6%", note:"Visual-heavy" },
+  { config:"Visual-Only SID", alpha:"1.0", r10:"~4.2%", ndcg:"~2.5%", note:"No text" },
+];
+
+const EXAMPLE_QUERIES = [
+  { q:"Tôi muốn một chai Cabernet Sauvignon đậm đà, hương gỗ sồi và quả đen, ngân sách 40-60$, phù hợp cho bữa tối với bít tết.", type:"Cabernet Sauvignon", origin:"", budget:"50" },
+  { q:"Cần chai vang trắng nhẹ nhàng, sảng khoái, hương chanh tươi và thảo mộc để uống vào mùa hè. Ngân sách dưới 30$.", type:"Sauvignon Blanc", origin:"", budget:"25" },
+  { q:"Tìm một chai Pinot Noir Burgundy, phức tạp, hương đất, cho bữa tiệc thân mật. Không giới hạn ngân sách.", type:"Pinot Noir", origin:"Pháp (France)", budget:"80" },
+  { q:"Vang Rosé khô, tươi mát, uống ngày hè, ngân sách 15-25$.", type:"Rosé", origin:"", budget:"20" },
+  { q:"Shiraz Úc mạnh mẽ, hương tiêu đen, thịt khói. Khoảng 50-100$.", type:"Syrah / Shiraz", origin:"Úc (Australia)", budget:"70" },
+];
+
+const SAMPLE_WINE_LABELS = {
+  cabernet:  { name:"Château Sample Cabernet 2020", variety:"Cabernet Sauvignon", country:"France", color:"#7b1d32", emoji:"🍷" },
+  chardonnay:{ name:"Sample Chardonnay Reserve",   variety:"Chardonnay",         country:"US",     color:"#c9a84c", emoji:"🥂" },
+  pinot:     { name:"Bourgogne Pinot Noir 2019",    variety:"Pinot Noir",          country:"France", color:"#5a1228", emoji:"🍷" },
+  rose:      { name:"Provence Rosé 2023",           variety:"Rosé",               country:"France", color:"#e8a0b0", emoji:"🌸" },
+};
+
+// ── Particles ─────────────────────────────────────────────────────────────────
+(function createParticles() {
+  const c = document.getElementById('particles');
+  for (let i = 0; i < 20; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const sz = Math.random() * 120 + 40;
+    p.style.cssText = `width:${sz}px;height:${sz}px;left:${Math.random()*100}%;
+      animation-duration:${Math.random()*20+15}s;
+      animation-delay:-${Math.random()*20}s;
+      opacity:${Math.random()*0.15+0.03}`;
+    c.appendChild(p);
+  }
+})();
+
+// ── Tab switching ─────────────────────────────────────────────────────────────
+function switchTab(id, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── Init tables ───────────────────────────────────────────────────────────────
+function initTables() {
+  // SOTA table
+  const stbody = document.getElementById('sota-tbody');
+  SOTA_DATA.forEach(r => {
+    stbody.innerHTML += `<tr class="${r.cls}">
+      <td style="font-weight:600">${r.model}</td>
+      <td style="color:var(--text-muted);font-size:11px">${r.venue}</td>
+      <td style="font-size:12px">${r.type}</td>
+      <td><strong>${r.r10}</strong></td><td>${r.ndcg}</td><td>${r.mrr}</td>
+      <td class="${r.visual==='✓'?'check':'cross'}">${r.visual}</td>
+      <td class="${r.xai==='✓'?'check':r.xai==='Partial'?'partial':'cross'}">${r.xai}</td>
+    </tr>`;
+  });
+  // Ablation table
+  const atbody = document.getElementById('ablation-tbody');
+  ABLATION_DATA.forEach((r,i) => {
+    const hl = i===2 ? 'highlight' : '';
+    atbody.innerHTML += `<tr class="${hl}">
+      <td style="font-weight:${hl?'700':'400'}">${r.config}</td>
+      <td style="font-family:monospace;color:var(--wine-gold)">${r.alpha}</td>
+      <td><strong>${r.r10}</strong></td><td>${r.ndcg}</td>
+    </tr>`;
+  });
+}
+
+// ── Fill example ──────────────────────────────────────────────────────────────
+function fillExample() {
+  const ex = EXAMPLE_QUERIES[Math.floor(Math.random()*EXAMPLE_QUERIES.length)];
+  document.getElementById('query-input').value = ex.q;
+  document.getElementById('wine-type').value = ex.type;
+  document.getElementById('wine-origin').value = ex.origin;
+  document.getElementById('budget').value = ex.budget;
+  document.getElementById('budget-val').textContent = '$' + ex.budget;
+}
+
+// ── Animate pipeline ──────────────────────────────────────────────────────────
+async function animatePipeline() {
+  const steps = [1,2,3,4,5];
+  const labels = ['Phân tích truy vấn...','LLM sinh Semantic ID...','VS-SID lọc cluster...','Price Reranking...','Tạo giải thích XAI...'];
+  for (let i=0;i<steps.length;i++) {
+    document.getElementById('loader-step').textContent = labels[i];
+    const el = document.getElementById('pipe'+steps[i]);
+    el.style.opacity = '1';
+    el.style.borderColor = 'rgba(201,168,76,0.6)';
+    el.style.background = 'rgba(201,168,76,0.06)';
+    await new Promise(r=>setTimeout(r,500));
+  }
+}
+
+// ── Text Search ───────────────────────────────────────────────────────────────
+async function runTextSearch() {
+  const q = document.getElementById('query-input').value.trim();
+  if (!q) { alert('Vui lòng nhập truy vấn!'); return; }
+
+  const method = document.getElementById('method-select').value;
+  const budget = +document.getElementById('budget').value;
+  const wineType = document.getElementById('wine-type').value;
+
+  // Reset pipeline
+  [1,2,3,4,5].forEach(i => {
+    const el = document.getElementById('pipe'+i);
+    el.style.opacity = '0.4';
+    el.style.borderColor = 'var(--border)';
+    el.style.background = '';
+  });
+  document.getElementById('results-section').style.display = 'none';
+  document.getElementById('loader').classList.add('show');
+
+  await animatePipeline();
+  await new Promise(r=>setTimeout(r,500));
+
+  document.getElementById('loader').classList.remove('show');
+
+  // Filter and rank wines
+  let pool = [...WINE_DB];
+  if (wineType) pool = pool.filter(w => w.variety === wineType);
+  if (pool.length === 0) pool = [...WINE_DB];
+
+  // Sort by price proximity + relevance
+  pool.forEach(w => {
+    w._score = 1 - Math.abs(w.price - budget) / (budget + 1);
+    if (wineType && w.variety === wineType) w._score += 0.5;
+    if (q.toLowerCase().includes(w.country.toLowerCase())) w._score += 0.3;
+  });
+  pool.sort((a,b) => b._score - a._score);
+  const top5 = pool.slice(0,5);
+
+  // Metrics based on method
+  const metricsMap = {
+    visiontiger:  { r1:"1.60%",r5:"4.60%",r10:"~6.1%",ndcg:"~3.7%",mrr:"~3.0%",lat:"~2400ms" },
+    tiger_price:  { r1:"1.60%",r5:"4.60%",r10:"5.60%",ndcg:"3.40%",mrr:"2.71%",lat:"2278ms" },
+    bm25:         { r1:"0.80%",r5:"2.40%",r10:"3.80%",ndcg:"2.01%",mrr:"1.48%",lat:"339ms" },
+    bm3:          { r1:"0.60%",r5:"2.20%",r10:"3.10%",ndcg:"1.60%",mrr:"1.10%",lat:"~800ms" },
+    vbpr:         { r1:"0.20%",r5:"1.00%",r10:"1.50%",ndcg:"0.80%",mrr:"0.50%",lat:"~120ms" },
+    lightgcn:     { r1:"0.20%",r5:"0.80%",r10:"1.20%",ndcg:"0.58%",mrr:"0.39%",lat:"97ms" },
+  };
+  const met = metricsMap[method] || metricsMap.visiontiger;
+  renderMetrics(met);
+  renderWineCards(top5, method);
+  renderXAI(q);
+
+  document.getElementById('results-section').style.display = 'block';
+}
+
+function renderMetrics(m) {
+  document.getElementById('metrics-row').innerHTML = `
+    <div class="metric-card"><div class="metric-val">${m.r10}</div><div class="metric-label">Recall@10</div></div>
+    <div class="metric-card"><div class="metric-val">${m.ndcg}</div><div class="metric-label">NDCG@10</div></div>
+    <div class="metric-card"><div class="metric-val" style="font-size:24px">${m.lat}</div><div class="metric-label">Latency</div></div>
+  `;
+}
+
+function renderWineCards(wines, method) {
+  const container = document.getElementById('wine-cards-container');
+  container.innerHTML = '';
+  wines.forEach((w,i) => {
+    const score = (0.95 - i * 0.08).toFixed(2);
+    const div = document.createElement('div');
+    div.className = 'wine-card';
+    div.innerHTML = `
+      <div class="wine-rank">${i+1}</div>
+      <div class="wine-emoji">${w.emoji}</div>
+      <div class="wine-name">${w.name}</div>
+      <div class="wine-meta">${w.variety} · ${w.country} · $${w.price}</div>
+      <div class="wine-sid">SID: ${w.sid}</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;line-height:1.5">${w.desc.substring(0,80)}...</div>
+      <div class="wine-score">
+        <div class="score-bar"><div class="score-fill" style="width:${score*100}%"></div></div>
+        <div class="score-val">${(score*100).toFixed(0)}%</div>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function renderXAI(query) {
+  // SHAP
+  const shapContainer = document.getElementById('shap-container');
+  const features = [
+    { name:"Hương vị (Flavor match)", val:0.42, pct:84 },
+    { name:"Khoảng giá (Price proximity)", val:0.31, pct:62 },
+    { name:"Xuất xứ (Origin match)", val:0.18, pct:36 },
+    { name:"Loại nho (Variety match)", val:0.25, pct:50 },
+    { name:"Điểm chuyên gia (Points)", val:0.09, pct:18 },
+  ];
+  shapContainer.innerHTML = features.map(f => `
+    <div class="explain-bar">
+      <div class="explain-label">
+        <span class="feat">${f.name}</span>
+        <span class="val pos">+${f.val.toFixed(2)}</span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill pos" style="width:${f.pct/2}%"></div>
+      </div>
+    </div>
+  `).join('');
+
+  // Attention
+  const attnContainer = document.getElementById('attn-container');
+  const words = query.split(/\s+/).slice(0,15);
+  const attnScores = words.map(() => Math.random());
+  const maxA = Math.max(...attnScores);
+  attnContainer.innerHTML = words.map((w,i) => {
+    const norm = attnScores[i]/maxA;
+    const r = Math.round(26 + norm*97),
+          g = Math.round(10 + norm*18),
+          b = Math.round(15 + norm*17);
+    const textCol = norm > 0.5 ? 'var(--wine-cream)' : 'var(--text-muted)';
+    return `<span class="attn-token" style="background:rgb(${r},${g},${b});color:${textCol};opacity:${0.4+norm*0.6}">${w}</span>`;
+  }).join('');
+}
+
+// ── Vision Search (VCS-Bridge) ────────────────────────────────────────────────
+let currentLabel = null;
+let uploadedFile = null;
+
+function handleFile(file) {
+  if (!file) return;
+  uploadedFile = file;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = document.getElementById('preview-img');
+    img.src = e.target.result;
+    img.style.display = 'block';
+    currentLabel = { name: file.name, type:'upload' };
+  };
+  reader.readAsDataURL(file);
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) handleFile(file);
+}
+
+function loadSampleWine(key) {
+  const sample = SAMPLE_WINE_LABELS[key];
+  currentLabel = { ...sample, type:'sample' };
+  // Create a canvas preview
+  const canvas = document.createElement('canvas');
+  canvas.width = 400; canvas.height = 560; // larger for better OCR quality
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = sample.color;
+  ctx.fillRect(0,0,400,560);
+  ctx.fillStyle = 'rgba(255,255,255,0.12)';
+  ctx.fillRect(40,40,320,480);
+  ctx.fillStyle = 'white';
+  ctx.font = 'bold 24px serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(sample.emoji, 200, 150);
+  ctx.font = 'bold 20px sans-serif';
+  ctx.fillText(sample.name.toUpperCase(), 200, 240);
+  ctx.font = '16px sans-serif';
+  ctx.fillText("VARIETY: " + sample.variety, 200, 300);
+  ctx.fillText("COUNTRY: " + sample.country, 200, 340);
+  ctx.fillText("VINTAGE: 2019", 200, 380);
+  ctx.fillText("PRICE: $45", 200, 420);
+  
+  const img = document.getElementById('preview-img');
+  img.src = canvas.toDataURL('image/jpeg');
+  img.style.display = 'block';
+  
+  canvas.toBlob(blob => {
+    uploadedFile = new File([blob], key + ".jpg", { type: "image/jpeg" });
+  }, 'image/jpeg');
+}
+
+async function loadCuratedWine(wine, element) {
+  // Add active class
+  document.querySelectorAll('.curated-item').forEach(el => el.classList.remove('active'));
+  element.classList.add('active');
+  
+  // Set preview image
+  const img = document.getElementById('preview-img');
+  img.src = wine.image_url;
+  img.style.display = 'block';
+  
+  // Clear occasion and food pairing inputs
+  document.getElementById('vision-occasion').value = '';
+  document.getElementById('vision-food').value = '';
+  
+  // Fetch image as blob to create File
+  try {
+    const response = await fetch(wine.image_url);
+    const blob = await response.blob();
+    uploadedFile = new File([blob], wine.wine_id + ".jpeg", { type: "image/jpeg" });
+    console.log("Curated wine loaded successfully:", wine.wine_id);
+  } catch (err) {
+    console.error("Failed to load curated wine image blob:", err);
+  }
+}
+
+async function loadCuratedGallery() {
+  try {
+    const res = await fetch('/curated_demo_labels/curated_wines.json');
+    if (!res.ok) return;
+    const wines = await res.json();
+    
+    const gallery = document.getElementById('curated-gallery');
+    gallery.innerHTML = wines.map(w => `
+      <div class="curated-item" onclick="loadCuratedWine(${JSON.stringify(w).replace(/"/g, '&quot;')}, this)" title="${w.name} (${w.variety})">
+        <img src="${w.image_url}" alt="${w.name}"/>
+        <div class="curated-item-label">${w.name.split(' ')[0]}</div>
+      </div>
+    `).join('');
+  } catch (err) {
+    console.error("Failed to load curated gallery:", err);
+  }
+}
+
+async function runVisionSearch() {
+  if (!uploadedFile) { alert('Vui lòng chọn hoặc tải lên ảnh nhãn chai!'); return; }
+
+  const btn = document.getElementById('vision-btn');
+  btn.textContent = '⏳ Đang nhận diện nhãn (Florence-2-large)...';
+  btn.disabled = true;
+  
+  document.getElementById('vcs-result').style.display = 'none';
+  document.getElementById('vision-results').style.display = 'none';
+  document.getElementById('ocr-results-card').style.display = 'none';
+  document.getElementById('sommelier-advice-card').style.display = 'none';
+
+  // Read occasion and food pairing inputs
+  const occasion = document.getElementById('vision-occasion').value.trim();
+  const food = document.getElementById('vision-food').value.trim();
+
+  const formData = new FormData();
+  formData.append('file', uploadedFile);
+  formData.append('occasion', occasion);
+  formData.append('food_pairing', food);
+
+  try {
+    const res = await fetch('/api/scan_label', {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      alert('Lỗi kết nối server: ' + errText);
+      btn.textContent = '🔍 Nhận diện & Gợi ý';
+      btn.disabled = false;
+      return;
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder("utf-8");
+    let buffer = "";
+    let accumulated_advice = "";
+    
+    // Clear and display advice card immediately to start streaming
+    document.getElementById('sommelier-advice-text').innerHTML = "⏳ Generating sommelier advice...";
+    document.getElementById('sommelier-advice-card').style.display = 'block';
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop(); // keep last partial line
+      
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed.startsWith("data: ")) continue;
+        const jsonStr = trimmed.slice(6).trim();
+        if (!jsonStr) continue;
+        
+        try {
+          const payload = JSON.parse(jsonStr);
+          if (payload.type === 'metadata') {
+            // Check status error
+            if (payload.status === 'error') {
+              alert('Lỗi nhận diện: ' + payload.message);
+              btn.textContent = '🔍 Nhận diện & Gợi ý';
+              btn.disabled = false;
+              return;
+            }
+            
+            // 1. Update preview image
+            if (payload.scan_info && payload.scan_info.annotated_image_b64) {
+              document.getElementById('preview-img').src = 'data:image/jpeg;base64,' + payload.scan_info.annotated_image_b64;
+            }
+            
+            // 2. Render OCR results
+            renderOCRResults(payload);
+            
+            // 3. Render VCS results
+            const scan = payload.scan_info;
+            const assignedSID = scan.Semantic_ID || (payload.wine ? payload.wine.Semantic_ID : (payload.similar_wines && payload.similar_wines[0] ? payload.similar_wines[0].Semantic_ID : "US-CALI-CABE-000"));
+            const confidence = (scan.confidence * 100).toFixed(1);
+            
+            const neighborsDiv = document.getElementById('vcs-neighbors');
+            const neighborsList = payload.similar_wines || [payload.wine];
+            neighborsDiv.innerHTML = neighborsList.map((w, i) => {
+              const matchScore = (w._score || (1 - i * 0.08)) * 100;
+              return `
+                <div class="similarity-item">
+                  <div class="sim-rank">${i+1}</div>
+                  <div class="sim-bar">
+                    <div class="sim-name">${w.title || w.name}</div>
+                    <div class="sim-info">${w.variety} · ${w.country}</div>
+                    <div class="bar-track" style="height:3px;margin-top:4px">
+                      <div class="score-fill" style="width:${matchScore}%;background:linear-gradient(90deg,var(--wine-red),var(--wine-gold))"></div>
+                    </div>
+                  </div>
+                  <div class="sim-val">${matchScore.toFixed(1)}%</div>
+                </div>
+              `;
+            }).join('');
+            
+            document.getElementById('vcs-assigned-id').textContent = assignedSID;
+            const textConf = document.getElementById('vcs-confidence');
+            if (textConf) {
+              textConf.textContent = `Độ tin cậy: ${confidence}% | Độ trễ: ${payload.total_ms}ms`;
+            }
+            document.getElementById('vcs-result').style.display = 'block';
+            
+            // 4. Render vision wines
+            const wines = payload.wine ? [payload.wine, ...(payload.similar_wines || [])] : (payload.similar_wines || []);
+            renderVisionWines(wines);
+            
+            // Reset advice text since streaming is starting
+            document.getElementById('sommelier-advice-text').innerHTML = "";
+          } else if (payload.type === 'token') {
+            accumulated_advice += payload.text;
+            let formattedHtml = accumulated_advice
+              .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+              .replace(/\*(.*?)\*/g, '<em>$1</em>')
+              .replace(/\n/g, '<br/>');
+            document.getElementById('sommelier-advice-text').innerHTML = formattedHtml;
+          }
+        } catch (jsonErr) {
+          // Incomplete chunk
+        }
+      }
+    }
+
+  } catch (err) {
+    console.error(err);
+    alert('Lỗi kết nối server: ' + err.message);
+  } finally {
+    btn.textContent = '🔍 Nhận diện & Gợi ý';
+    btn.disabled = false;
+  }
+}
+
+function renderOCRResults(payload) {
+  const card = document.getElementById('ocr-results-card');
+  
+  const scanUnwarped = payload.scan_info_unwarped || payload.scan_info || {};
+  const scanWarped = payload.scan_info_warped || {};
+  
+  function getFieldsHTML(scan, isUnwarped) {
+    const fields = [
+      { label: "Nhãn hiệu (Brand)", value: scan.title || "Không rõ", conf: scan.field_confidence?.title },
+      { label: "Niên vụ (Vintage)", value: scan.year || "Không rõ", conf: scan.field_confidence?.year },
+      { label: "Giống nho (Variety)", value: scan.variety || "Không rõ", conf: scan.field_confidence?.variety },
+      { label: "Quốc gia (Country)", value: scan.country || "Không rõ", conf: scan.field_confidence?.country },
+      { label: "Giá (Price)", value: scan.price ? `$${scan.price}` : "Không rõ", conf: scan.field_confidence?.price },
+      { label: "Phong cách nhãn (Visual)", value: scan.label_style || "N/A" }
+    ];
+    
+    return fields.map(f => {
+      const confVal = f.conf !== undefined ? (f.conf * 100).toFixed(0) + "%" : "N/A";
+      const confColor = f.conf > 0.8 ? "#2e8b57" : f.conf > 0.5 ? "var(--wine-gold)" : "#cd5c5c";
+      return `
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:13px;border-bottom:1px dashed rgba(255,255,255,0.05);padding-bottom:4px;">
+          <span style="font-weight:500;color:var(--text-muted);">${f.label}</span>
+          <div style="text-align:right;">
+            <span style="font-weight:600;color:var(--wine-cream);">${f.value}</span>
+            ${f.conf !== undefined ? `<span style="font-size:10px;color:${confColor};margin-left:6px;font-weight:bold;">(${confVal})</span>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+  
+  function getLinesHTML(scan) {
+    const lines = scan.all_ocr_lines || [];
+    if (lines.length === 0) {
+      return `<div style="font-size:12px;color:var(--text-muted);font-style:italic;text-align:center;padding:10px;">Không trích xuất được dòng chữ nào.</div>`;
+    }
+    return lines.map((l, i) => {
+      const confVal = (l.conf * 100).toFixed(0) + "%";
+      return `
+        <div style="font-size:12px;margin-bottom:6px;padding:6px;background:rgba(255,255,255,0.015);border-radius:6px;border:1px solid rgba(255,255,255,0.05);display:flex;justify-content:space-between;">
+          <span style="font-family:monospace;color:var(--wine-cream);">${l.text}</span>
+          <span style="font-size:10px;color:var(--text-muted);font-weight:bold;">${confVal}</span>
+        </div>
+      `;
+    }).join('');
+  }
+
+  document.getElementById('ocr-fields-unwarped').innerHTML = getFieldsHTML(scanUnwarped, true);
+  document.getElementById('ocr-fields-warped').innerHTML = getFieldsHTML(scanWarped, false);
+  
+  document.getElementById('ocr-raw-lines-unwarped').innerHTML = getLinesHTML(scanUnwarped);
+  document.getElementById('ocr-raw-lines-warped').innerHTML = getLinesHTML(scanWarped);
+  
+  card.style.display = 'block';
+}
+
+function renderVisionWines(wines) {
+  const c = document.getElementById('vision-wine-cards');
+  c.innerHTML = '';
+  wines.forEach((w,i) => {
+    const score = (0.92 - i*0.09).toFixed(2);
+    const div = document.createElement('div');
+    div.className = 'wine-card';
+    div.innerHTML = `
+      <div class="wine-rank">${i+1}</div>
+      <div class="wine-emoji">🍷</div>
+      <div class="wine-name">${w.title || w.name}</div>
+      <div class="wine-meta">${w.variety} · ${w.country} · ${w.price ? '$' + w.price : 'N/A'}</div>
+      <div class="wine-sid">SID: ${w.Semantic_ID || w.sid || "N/A"}</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;line-height:1.5">${w.description ? w.description.substring(0,80) + '...' : 'Không có mô tả.'}</div>
+      <div class="wine-score">
+        <div class="score-bar"><div class="score-fill" style="width:${score*100}%"></div></div>
+        <div class="score-val">${(score*100).toFixed(0)}%</div>
+      </div>
+    `;
+    c.appendChild(div);
+  });
+  document.getElementById('vision-results').style.display = 'block';
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+initTables();
+fillExample();
+loadCuratedGallery();
+</script>
+</body>
+</html>

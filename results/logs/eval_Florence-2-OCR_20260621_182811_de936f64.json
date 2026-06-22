@@ -1,0 +1,82 @@
+{
+  "identity": {
+    "run_id": "de936f64",
+    "timestamp_utc": "2026-06-21T11:28:11Z",
+    "model": {
+      "name": "Florence-2-OCR",
+      "version": "large-ft-1.0",
+      "task": "ocr_entity_extraction"
+    }
+  },
+  "reproducibility": {
+    "git_commit": "aa82599",
+    "git_branch": "main",
+    "dataset_version": "WineLabel-Curated-15-v1",
+    "random_seed": 0,
+    "python_version": "3.11.9",
+    "platform": "Windows 10",
+    "extra_params": {
+      "vlm": "microsoft/Florence-2-large",
+      "detector": "YOLO11-wine-finetuned",
+      "unwarping": true,
+      "unwarping_method": "cylindrical_projection"
+    }
+  },
+  "results": {
+    "ocr_entity_extraction": {
+      "task_description": "Named entity extraction from wine bottle label images",
+      "ocr_model": "Florence-2",
+      "detection_model": "YOLO11-wine",
+      "image_config": "unwarped",
+      "n_samples": 15,
+      "entity_metrics": {
+        "Variety": {
+          "precision": 0.4,
+          "recall": 0.4,
+          "f1": 0.4
+        },
+        "Country": {
+          "precision": 0.6,
+          "recall": 0.6,
+          "f1": 0.6
+        },
+        "Winery": {
+          "precision": 0.3333,
+          "recall": 0.3333,
+          "f1": 0.3333
+        },
+        "Vintage": {
+          "precision": 0.8,
+          "recall": 0.8,
+          "f1": 0.8
+        },
+        "Label": {
+          "precision": 0.7333,
+          "recall": 0.7333,
+          "f1": 0.7333
+        }
+      },
+      "macro_avg_f1": 0.5733
+    }
+  },
+  "system_performance": {
+    "wall_clock_seconds": 0.021,
+    "inference_latency": {
+      "total_ms": 2607730,
+      "per_sample_ms": 2590,
+      "throughput_per_s": 0.39,
+      "n_samples": 1007,
+      "stage_breakdown_ms": {
+        "yolo_detection_ms": 120,
+        "cylindrical_unwarp_ms": 280,
+        "florence_ocr_ms": 2100,
+        "entity_parse_ms": 90
+      }
+    }
+  },
+  "notes": [
+    "Unwarped config improves macro-F1 vs curved by ~8pp on curated set",
+    "Full eval on 1007-image XWines-1K test set; curated n=15 for entity analysis"
+  ],
+  "log_schema_version": "1.0"
+}

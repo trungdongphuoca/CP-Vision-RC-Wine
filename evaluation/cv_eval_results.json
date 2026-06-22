@@ -1,0 +1,27 @@
+{
+  "baseline": {
+    "n": 10,
+    "yolo_used_pct": 0.0,
+    "avg_confidence": 0.605,
+    "f1_variety": 0.7,
+    "f1_country": 0.5,
+    "f1_year": 1.0,
+    "cer": 0.997,
+    "avg_latency_ms": 1346.8,
+    "p95_latency_ms": 2046.5,
+    "macro_f1": 0.733
+  },
+  "proposed": {
+    "n": 10,
+    "yolo_used_pct": 0.0,
+    "avg_confidence": 0.605,
+    "f1_variety": 0.7,
+    "f1_country": 0.5,
+    "f1_year": 1.0,
+    "cer": 0.997,
+    "avg_latency_ms": 1215.3,
+    "p95_latency_ms": 1530.6,
+    "macro_f1": 0.733
+  },
+  "n_samples": 10
+}

@@ -4,56 +4,134 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Sommelier - Generative Wine Recommendation</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary: #c2185b;
             --primary-hover: #e91e63;
-            --bg-color: #0f172a;
-            --surface: rgba(30, 41, 59, 0.7);
-            --surface-border: rgba(255, 255, 255, 0.1);
+            --burgundy: #880e4f;
+            --burgundy-glow: rgba(136, 14, 79, 0.4);
+            --bg-color: #0b0f19;
+            --surface: rgba(22, 28, 45, 0.6);
+            --surface-2: rgba(30, 41, 59, 0.7);
+            --border: rgba(255, 255, 255, 0.08);
+            --border-glow: rgba(201, 168, 76, 0.2);
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
-            --user-msg: rgba(194, 24, 91, 0.3);
-            --ai-msg: rgba(255, 255, 255, 0.05);
+            --text-dim: #64748b;
+            --gold: #c9a04c;
+            --gold-light: #f3d082;
+            --green: #2dd48a;
+            --rose: #f43f5e;
+            --user-msg: rgba(194, 24, 91, 0.2);
+            --ai-msg: rgba(255, 255, 255, 0.03);
+            --radius-lg: 20px;
+            --radius-md: 12px;
         }
 
         body {
             margin: 0;
             padding: 0;
             font-family: 'Outfit', sans-serif;
-            background: radial-gradient(circle at top right, #31081f 0%, var(--bg-color) 60%);
+            background: radial-gradient(circle at top right, #240a1b 0%, var(--bg-color) 70%);
             color: var(--text-main);
             height: 100vh;
             display: flex;
             flex-direction: column;
-            align-items: center;
             overflow: hidden;
         }
 
-        .header {
+        /* Header & Tabs */
+        header {
             width: 100%;
-            padding: 1rem;
-            text-align: center;
-            background: rgba(15, 23, 42, 0.8);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid var(--surface-border);
-            z-index: 20;
+            height: 70px;
+            padding: 0 2rem;
+            box-sizing: border-box;
+            background: rgba(11, 15, 25, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 50;
+            flex-shrink: 0;
         }
 
-        h1 {
+        .logo {
             font-family: 'Playfair Display', serif;
-            font-size: 2.5rem;
-            margin: 0;
-            background: linear-gradient(to right, #ff7eb3, #ff758c);
+            font-size: 1.6rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #f43f5e, #c9a04c);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .logo-sub {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            margin-left: 0.5rem;
+            align-self: flex-end;
+            padding-bottom: 4px;
         }
 
-        .chat-container {
+        .tab-nav {
+            display: flex;
+            gap: 0.6rem;
+        }
+        .tab-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-muted);
+            padding: 0.55rem 1.2rem;
+            border-radius: 10px;
+            font-size: 0.92rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .tab-btn:hover {
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.04);
+        }
+        .tab-btn.active {
+            color: var(--gold-light);
+            background: rgba(201, 168, 76, 0.1);
+            border-color: var(--border-glow);
+        }
+
+        /* Main panels container */
+        main {
             flex: 1;
             width: 100%;
-            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            position: relative;
+        }
+
+        .tab-panel {
+            display: none;
+            width: 100%;
+            height: 100%;
+            min-height: 0;
+            flex-direction: column;
+        }
+        .tab-panel.active {
+            display: flex;
+        }
+
+        /* ── CHAT TAB ── */
+        .chat-container {
+            flex: 1;
             overflow-y: auto;
             padding: 2rem;
             box-sizing: border-box;
@@ -62,143 +140,86 @@
             gap: 1.5rem;
             scroll-behavior: smooth;
         }
-
-        /* Hide scrollbar for neatness */
         .chat-container::-webkit-scrollbar { width: 6px; }
-        .chat-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+        .chat-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 10px; }
 
-        .message {
-            max-width: 80%;
-            padding: 1.5rem;
-            border-radius: 20px;
+        .msg {
+            max-width: 75%;
+            padding: 1.2rem 1.5rem;
+            border-radius: var(--radius-lg);
             line-height: 1.6;
-            font-size: 1.1rem;
-            animation: fadeIn 0.3s ease-out;
+            font-size: 1.02rem;
+            animation: fadeIn 0.3s ease-out both;
         }
-
-        .user-message {
+        .msg-user {
             background: var(--user-msg);
-            border: 1px solid rgba(194, 24, 91, 0.5);
+            border: 1px solid rgba(194, 24, 91, 0.3);
             align-self: flex-end;
             border-bottom-right-radius: 4px;
         }
-
-        .ai-message {
+        .msg-ai {
             background: var(--ai-msg);
-            border: 1px solid var(--surface-border);
+            border: 1px solid var(--border);
             align-self: flex-start;
             border-bottom-left-radius: 4px;
             backdrop-filter: blur(12px);
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
         .wine-card {
-            background: rgba(0, 0, 0, 0.2);
-            border-left: 4px solid var(--primary);
-            padding: 1.5rem;
-            margin-top: 1rem;
-            border-radius: 12px;
+            background: rgba(0,0,0,.25);
+            border-left: 3px solid var(--gold);
+            padding: 1.2rem;
+            border-radius: var(--radius-md);
+            margin-top: .9rem;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
-
-        .wine-title {
+        .wine-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--rose);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
+        .wine-card-title {
             font-family: 'Playfair Display', serif;
-            font-size: 1.6rem;
+            font-size: 1.25rem;
+            font-weight: 700;
             margin: 0 0 0.5rem 0;
-            color: #fff;
+            color: var(--text-main);
         }
-
         .wine-tags {
             display: flex;
-            gap: 0.5rem;
+            gap: 0.4rem;
             flex-wrap: wrap;
-            margin-bottom: 1rem;
+            margin-bottom: 0.6rem;
         }
-
         .tag {
-            background: rgba(255,255,255,0.1);
-            padding: 0.3rem 0.8rem;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            color: #ff7eb3;
+            background: rgba(255,255,255,.06);
+            padding: .2rem .6rem;
+            border-radius: 12px;
+            font-size: .75rem;
+            color: var(--gold-light);
             font-weight: 600;
         }
-
         .wine-price {
-            font-size: 1.4rem;
-            font-weight: 800;
-            color: #10b981;
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--green);
             margin-bottom: 0.5rem;
         }
-
-        .meta-id {
-            font-size: 0.8rem;
+        .wine-desc {
+            font-size: 0.92rem;
             color: var(--text-muted);
-            margin-top: 1rem;
-            font-family: monospace;
-        }
-
-        .input-area {
-            width: 100%;
-            max-width: 900px;
-            padding: 1.5rem;
-            box-sizing: border-box;
-            background: rgba(15, 23, 42, 0.8);
-            backdrop-filter: blur(10px);
-            border-top: 1px solid var(--surface-border);
-        }
-
-        .search-container {
-            display: flex;
-            gap: 1rem;
-        }
-
-        input[type="text"] {
-            flex: 1;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--surface-border);
-            color: var(--text-main);
-            padding: 1.2rem 1.5rem;
-            border-radius: 16px;
-            font-size: 1.1rem;
-            font-family: inherit;
-            outline: none;
-            transition: all 0.3s ease;
-        }
-
-        input[type="text"]:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(194, 24, 91, 0.2);
-        }
-
-        button {
-            background: linear-gradient(135deg, var(--primary) 0%, #ff758c 100%);
-            color: white;
-            border: none;
-            padding: 0 2rem;
-            border-radius: 16px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            font-family: inherit;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 10px 15px -3px rgba(194, 24, 91, 0.3);
-        }
-
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 20px 25px -5px rgba(194, 24, 91, 0.4);
+            line-height: 1.5;
         }
 
         /* Typing indicator */
         .typing {
             display: flex;
             gap: 5px;
-            padding: 1rem;
+            padding: 1rem 1.5rem;
             background: transparent;
+            align-self: flex-start;
         }
         .typing span {
             width: 8px;
@@ -209,154 +230,1693 @@
         }
         .typing span:nth-child(1) { animation-delay: -0.32s; }
         .typing span:nth-child(2) { animation-delay: -0.16s; }
+
         @keyframes bounce {
             0%, 80%, 100% { transform: scale(0); }
             40% { transform: scale(1); }
         }
-
-        .blob {
-            position: absolute;
-            filter: blur(80px);
-            z-index: -1;
-            opacity: 0.4;
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        .blob-1 { width: 400px; height: 400px; background: #c2185b; top: -100px; left: -100px; border-radius: 50%; }
-        .blob-2 { width: 300px; height: 300px; background: #4f46e5; bottom: -50px; right: -50px; border-radius: 50%; }
+
+        /* Chat input bar */
+        .chat-input-bar {
+            padding: 1.2rem 2rem;
+            background: rgba(11, 15, 25, 0.9);
+            backdrop-filter: blur(16px);
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 0.8rem;
+            flex-shrink: 0;
+            align-items: center;
+        }
+        .chat-input-bar input {
+            flex: 1;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 0.9rem 1.3rem;
+            border-radius: 14px;
+            font-size: 0.97rem;
+            font-family: inherit;
+            outline: none;
+            transition: border-color .2s, box-shadow .2s;
+        }
+        .chat-input-bar input:focus {
+            border-color: var(--gold);
+            box-shadow: 0 0 0 3px rgba(201,168,76,.15);
+        }
+        .btn-attach {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            width: 46px;
+            height: 46px;
+            border-radius: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            transition: all 0.2s;
+        }
+        .btn-attach:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-main);
+        }
+        .btn-send {
+            background: linear-gradient(135deg, var(--burgundy), var(--rose));
+            color: #fff;
+            border: none;
+            padding: 0 1.6rem;
+            height: 46px;
+            border-radius: 14px;
+            font-size: 0.97rem;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 6px 20px var(--burgundy-glow);
+        }
+        .btn-send:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 28px var(--burgundy-glow);
+        }
+        .btn-send:disabled {
+            opacity: 0.5;
+            transform: none;
+            cursor: default;
+        }
+
+        /* Preview container in chat input */
+        .chat-preview-box {
+            display: none;
+            align-items: center;
+            gap: 0.8rem;
+            background: rgba(11, 15, 25, 0.95);
+            padding: 0.6rem 2rem;
+            border-top: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        .chat-preview-img-wrap {
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            position: relative;
+        }
+        .chat-preview-img-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .chat-preview-details {
+            display: flex;
+            flex-direction: column;
+            gap: 0.15rem;
+        }
+        .chat-preview-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+        .chat-preview-size {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+        .btn-clear-preview {
+            background: none;
+            border: none;
+            color: var(--rose);
+            font-size: 0.9rem;
+            cursor: pointer;
+            padding: 0.2rem;
+            margin-left: auto;
+        }
+        .btn-clear-preview:hover {
+            text-decoration: underline;
+        }
+
+        /* ── SCAN TAB ── */
+        .scan-panel {
+            flex: 1;
+            display: flex;
+            min-height: 0;
+            overflow: hidden;
+        }
+        .scan-left {
+            width: 38%;
+            min-width: 340px;
+            padding: 2rem;
+            box-sizing: border-box;
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            overflow-y: auto;
+        }
+        .scan-right {
+            flex: 1;
+            padding: 2rem;
+            box-sizing: border-box;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            min-height: 0;
+        }
+        .scan-right::-webkit-scrollbar, .scan-left::-webkit-scrollbar { width: 6px; }
+        .scan-right::-webkit-scrollbar-thumb, .scan-left::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 10px; }
+
+        /* Upload zone */
+        .upload-zone {
+            border: 2px dashed var(--border-glow);
+            border-radius: 20px;
+            padding: 3rem 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(201, 168, 76, 0.02);
+            text-align: center;
+        }
+        .upload-zone:hover, .upload-zone.drag-over {
+            border-color: var(--gold);
+            background: rgba(201, 168, 76, 0.06);
+            box-shadow: 0 0 30px rgba(201, 168, 76, 0.12) inset;
+        }
+        .upload-icon {
+            font-size: 3rem;
+            filter: drop-shadow(0 0 12px rgba(201, 168, 76, 0.4));
+            animation: floatIcon 3s ease-in-out infinite;
+        }
+        @keyframes floatIcon {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+        .upload-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--gold-light);
+        }
+        .upload-sub {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+        .upload-btn-row {
+            display: flex;
+            gap: 0.6rem;
+            margin-top: 0.4rem;
+        }
+        .btn-upload, .btn-camera {
+            padding: 0.55rem 1.2rem;
+            border-radius: 10px;
+            border: none;
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .btn-upload {
+            background: var(--gold);
+            color: #0b0f1a;
+        }
+        .btn-upload:hover {
+            background: var(--gold-light);
+        }
+        .btn-camera {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+        }
+        .btn-camera:hover {
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        /* Image Preview in Scan Left */
+        .img-preview {
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            position: relative;
+            display: none;
+        }
+        .img-preview.visible {
+            display: block;
+        }
+        .img-preview img {
+            width: 100%;
+            display: block;
+            max-height: 300px;
+            object-fit: cover;
+        }
+        .img-preview-footer {
+            background: rgba(11, 15, 25, 0.9);
+            padding: 0.8rem 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .img-preview-filename {
+            font-size: 0.82rem;
+            color: rgba(255, 255, 255, 0.7);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 60%;
+        }
+        .img-change-btn {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.35rem 0.8rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .img-change-btn:hover {
+            background: rgba(255, 255, 255, 0.18);
+        }
+
+        /* Scan trigger button */
+        .btn-scan-trigger {
+            background: linear-gradient(135deg, var(--primary) 0%, #ff758c 100%);
+            color: white;
+            border: none;
+            padding: 0.9rem;
+            border-radius: 14px;
+            font-size: 1rem;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 20px rgba(194, 24, 91, 0.3);
+            text-align: center;
+        }
+        .btn-scan-trigger:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 12px 25px rgba(194, 24, 91, 0.45);
+        }
+        .btn-scan-trigger:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* Scan Results Layout */
+        .result-placeholder {
+            text-align: center;
+            padding: 5rem 2rem;
+            color: var(--text-muted);
+            border: 1px dashed var(--border);
+            border-radius: 20px;
+            background: rgba(255,255,255,0.01);
+        }
+        .ph-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.35rem 0.8rem;
+            border-radius: 8px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .badge-instock {
+            background: rgba(45, 212, 138, 0.15);
+            color: var(--green);
+            border: 1px solid rgba(45, 212, 138, 0.25);
+        }
+        .badge-notinstock {
+            background: rgba(244, 63, 94, 0.15);
+            color: var(--rose);
+            border: 1px solid rgba(244, 63, 94, 0.25);
+        }
+        .badge-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+            display: inline-block;
+        }
+
+        .result-wine-card {
+            background: linear-gradient(145deg, rgba(155,29,62,.12), rgba(201,168,76,.06));
+            border: 1px solid rgba(201,168,76,.22);
+            border-radius: 20px;
+            padding: 1.6rem;
+            animation: cardIn .4s ease-out both;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .result-wine-card:hover {
+            background: linear-gradient(145deg, rgba(155,29,62,.18), rgba(201,168,76,.10));
+            border-color: rgba(201,168,76,.4);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
+        .result-wine-card .wine-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--text-main);
+        }
+        .result-price {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--green);
+            margin-bottom: 0.8rem;
+        }
+
+        .aroma-section, .pairing-section {
+            margin-top: 1rem;
+        }
+        .aroma-section h4, .pairing-section h4 {
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--gold-light);
+            margin: 0 0 0.6rem 0;
+            font-weight: 700;
+        }
+        .aroma-pills {
+            display: flex;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+        }
+        .aroma-pill {
+            background: rgba(201, 168, 76, 0.12);
+            color: var(--gold-light);
+            padding: 0.25rem 0.7rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            border: 1px solid rgba(201, 168, 76, 0.2);
+        }
+        .aroma-pill.secondary {
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-muted);
+            border-color: var(--border);
+        }
+        .pairing-list {
+            display: flex;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+        }
+        .pairing-chip {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 0.25rem 0.7rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+        }
+
+        .tasting-box {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem 1.2rem;
+            font-size: 0.95rem;
+            line-height: 1.55;
+            color: #d1d5db;
+        }
+
+        .similar-intro {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin: 1.5rem 0 0.8rem 0;
+        }
+        .similar-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.9rem;
+        }
+        .similar-wine-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.2rem 1.4rem;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: cardIn .4s ease-out both;
+        }
+        .similar-wine-card:hover {
+            background: var(--surface-2);
+            border-color: rgba(201, 168, 76, 0.4);
+            transform: translateY(-2px) translateX(2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
+        .similar-wine-card .s-name {
+            font-weight: 700;
+            font-size: 1.05rem;
+            margin-bottom: 0.4rem;
+            color: var(--text-main);
+        }
+        .similar-wine-card .s-tags {
+            display: flex;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+            margin-bottom: 0.5rem;
+        }
+        .similar-wine-card .s-reason {
+            font-size: 0.82rem;
+            color: var(--gold-light);
+            background: rgba(201, 168, 76, 0.06);
+            border: 1px solid rgba(201, 168, 76, 0.15);
+            border-radius: 6px;
+            padding: 0.25rem 0.6rem;
+            display: inline-block;
+            margin-bottom: 0.5rem;
+        }
+        .similar-wine-card .s-price {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--green);
+        }
+        .similar-wine-card .s-desc {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+            line-height: 1.45;
+        }
+
+        /* Scan details layout (YOLO overlay + extracted fields) */
+        .scan-results-split {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            align-items: start;
+        }
+        @media (max-width: 1100px) {
+            .scan-results-split {
+                grid-template-columns: 1fr;
+            }
+        }
+        .scan-img-box {
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            border: 1px solid var(--border);
+            background: rgba(0, 0, 0, 0.2);
+        }
+        .scan-meta {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 1.2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .ocr-collapsible {
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.15);
+        }
+        .ocr-header {
+            padding: 0.8rem 1.2rem;
+            font-size: 0.82rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+        }
+        .ocr-header:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+        .ocr-body {
+            display: none;
+            padding: 1rem 1.2rem;
+            border-top: 1px solid var(--border);
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: #d1d5db;
+            white-space: pre-wrap;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        .ocr-collapsible.open .ocr-body {
+            display: block;
+        }
+
+        /* ── MODALS (Camera and Wine Details) ── */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.85);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(8px);
+        }
+        .modal-overlay.open {
+            display: flex;
+        }
+        .modal-box {
+            background: #111826;
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            animation: modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+        #cameraStream {
+            width: 100%;
+            border-radius: 12px;
+            background: #000;
+            transform: scaleX(-1); /* mirror view */
+        }
+        .modal-actions {
+            display: flex;
+            gap: .8rem;
+            justify-content: center;
+            margin-top: 1.2rem;
+        }
+        .btn-modal {
+            padding: .6rem 1.4rem;
+            border-radius: 12px;
+            border: none;
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-capture {
+            background: linear-gradient(135deg, var(--primary), var(--rose));
+            color: #fff;
+        }
+        .btn-capture:hover {
+            transform: translateY(-1px);
+        }
+        .btn-cancel {
+            background: var(--surface-2);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+        }
+        .btn-cancel:hover {
+            background: rgba(255,255,255,0.06);
+        }
+
+        /* Wine Detail Modal Box */
+        .wine-detail-box {
+            background: rgba(22, 28, 45, 0.96);
+            border: 1px solid var(--border-glow);
+            border-radius: 24px;
+            padding: 2.2rem;
+            max-width: 650px;
+            width: 90%;
+            text-align: left;
+            position: relative;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            backdrop-filter: blur(20px);
+            animation: modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-sizing: border-box;
+        }
+        .wine-detail-box::-webkit-scrollbar { width: 6px; }
+        .wine-detail-box::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 10px; }
+
+        @keyframes modalSlideUp {
+            from { opacity: 0; transform: translateY(24px) scale(0.97); }
+            to { opacity: 1; transform: none; }
+        }
+        .modal-close-btn {
+            position: absolute;
+            top: 1.2rem;
+            right: 1.2rem;
+            background: rgba(255,255,255,0.06);
+            border: none;
+            color: var(--text-main);
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            transition: all 0.2s;
+            z-index: 10;
+        }
+        .modal-close-btn:hover {
+            background: rgba(255,255,255,0.15);
+            transform: rotate(90deg);
+        }
+        .modal-wine-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 0.8rem;
+            line-height: 1.35;
+            padding-right: 2rem;
+        }
+        .modal-wine-tags {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.2rem;
+        }
+        .modal-wine-price {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--green);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .modal-wine-section {
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            padding-top: 1.2rem;
+            margin-top: 1.2rem;
+        }
+        .modal-section-title {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--gold-light);
+            margin-bottom: 0.6rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .modal-wine-body {
+            font-size: 0.98rem;
+            color: #d1d5db;
+            line-height: 1.6;
+        }
+        
+        /* Attention Highlights in Modal */
+        .attention-tokens {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+            background: rgba(0, 0, 0, 0.25);
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+        .attn-token {
+            padding: 0.18rem 0.5rem;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.88rem;
+            transition: all 0.2s;
+            cursor: help;
+            display: inline-flex;
+            align-items: center;
+        }
+        
+        /* SHAP Feature Weights in Modal */
+        .shap-bars {
+            display: flex;
+            flex-direction: column;
+            gap: 0.7rem;
+            background: rgba(0, 0, 0, 0.25);
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+        .shap-row {
+            display: grid;
+            grid-template-columns: 140px 1fr 60px;
+            align-items: center;
+            gap: 0.8rem;
+        }
+        .shap-label {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+            text-transform: capitalize;
+        }
+        .shap-track {
+            height: 10px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 5px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+        }
+        .shap-fill-pos {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #34d399);
+            border-radius: 5px;
+            transition: width 0.6s ease;
+        }
+        .shap-fill-neg {
+            height: 100%;
+            background: linear-gradient(90deg, #f43f5e, #fb7185);
+            border-radius: 5px;
+            transition: width 0.6s ease;
+        }
+        .shap-val-text {
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-align: right;
+        }
+
+        /* ── RESPONSIVE RULES ── */
+        @media (max-width: 800px) {
+            header {
+                padding: 0 1rem;
+                height: 60px;
+            }
+            .logo { font-size: 1.3rem; }
+            .logo-sub { display: none; }
+            .tab-btn { padding: 0.45rem 0.8rem; font-size: 0.85rem; }
+
+            .scan-panel {
+                flex-direction: column;
+                overflow-y: auto;
+            }
+            .scan-left {
+                width: 100%;
+                min-width: 0;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+                overflow-y: visible;
+                padding: 1.2rem;
+                flex-shrink: 0;
+            }
+            .scan-right {
+                width: 100%;
+                min-width: 0;
+                overflow-y: visible;
+                padding: 1.2rem;
+                flex-shrink: 0;
+}
+        .msg { max-width: 90%; padding: 1rem; font-size: 0.95rem; }
+        .chat-container { padding: 1.2rem; gap: 1rem; }
+        .chat-input-bar { padding: 0.8rem 1rem; gap: 0.5rem; }
+        .btn-send { padding: 0 1rem; font-size: 0.9rem; }
     </style>
 </head>
 <body>
-    <div class="blob blob-1"></div>
-    <div class="blob blob-2"></div>
 
-    <div class="header">
-        <h1>AI Sommelier</h1>
+<!-- Header / Navigation -->
+<header>
+    <div class="logo">
+        🍷 AI Sommelier
+        <span class="logo-sub">Wine Consultant</span>
     </div>
+    <nav class="tab-nav">
+        <button class="tab-btn active" id="tabChat" onclick="switchTab('chat')">
+            💬 Chat Sommelier
+        </button>
+        <button class="tab-btn" id="tabScan" onclick="switchTab('scan')">
+            📸 Scan Wine Label
+        </button>
+    </nav>
+</header>
 
-    <div class="chat-container" id="chatContainer">
-        <div class="message ai-message">
-            Hello! I am your AI Sommelier. Tell me what you're craving, what you're eating, or what occasion you're celebrating, and I will find the perfect bottle of wine for you.
+<!-- Main content panel container -->
+<main>
+    
+    <!-- ── TAB CONTENT: CHAT ── -->
+    <section class="tab-panel active" id="panelChat">
+        <!-- Chat History -->
+        <div class="chat-container" id="chatContainer">
+            <div class="msg msg-ai">
+                Hello! I am your AI Sommelier. Share the dishes you are pairing, your favorite flavors, or your budget, and I will find and introduce the perfect bottle for you!
+            </div>
         </div>
-    </div>
 
-    <div class="input-area">
-        <div class="search-container">
-            <input type="text" id="queryInput" placeholder="e.g., A bold red wine for pizza night, around $40" autocomplete="off" onkeypress="handleKeyPress(event)">
-            <button id="sendBtn" onclick="sendMessage()">Send</button>
+        <!-- Selected image preview inside chat -->
+        <div class="chat-preview-box" id="chatImagePreview">
+            <div class="chat-preview-img-wrap">
+                <img id="chatPreviewImg" src="" alt="Chat upload preview">
+            </div>
+            <div class="chat-preview-details">
+                <span class="chat-preview-name" id="chatPreviewFilename">label.jpg</span>
+                <span class="chat-preview-size">Ready for consultation</span>
+            </div>
+            <button class="btn-clear-preview" onclick="clearChatImage()">✕ Remove</button>
         </div>
-    </div>
 
-    <script>
-        // Store conversation history
-        let chatHistory = [];
+        <!-- Input area -->
+        <div class="chat-input-bar">
+            <!-- Hidden inputs -->
+            <input type="file" id="chatFileInput" accept="image/*" style="display:none;" onchange="handleChatFileSelect(event)">
+            
+            <button class="btn-attach" onclick="triggerChatFileInput()" title="Attach wine label image">
+                📷
+            </button>
+            <input type="text" id="queryInput" placeholder="Enter request: e.g., Bold red wine for steak around $40..." autocomplete="off" onkeypress="if(event.key==='Enter')sendMessage()">
+            <button class="btn-send" id="sendBtn" onclick="sendMessage()">Send</button>
+        </div>
+    </section>
 
-        async function sendMessage() {
-            const input = document.getElementById('queryInput');
-            const query = input.value.trim();
-            if (!query) return;
-
-            // Add user message to UI
-            appendMessage(query, 'user');
-            input.value = '';
-            input.disabled = true;
-            document.getElementById('sendBtn').disabled = true;
-
-            // Show typing indicator
-            const typingId = showTyping();
-
-            try {
-                const response = await fetch('/recommend', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        query: query,
-                        history: chatHistory 
-                    })
-                });
-
-                document.getElementById(typingId).remove();
-
-                if (!response.ok) throw new Error('API request failed');
-
-                const data = await response.json();
+    <!-- ── TAB CONTENT: SCAN LABEL ── -->
+    <section class="tab-panel" id="panelScan">
+        <div class="scan-panel">
+            
+            <!-- Left Side: Upload label / Camera interface -->
+            <div class="scan-left">
+                <h3 style="margin: 0; font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--gold-light);">📸 Upload Label Image</h3>
+                <p style="margin: 0; font-size: 0.88rem; color: var(--text-muted); line-height: 1.5;">The system uses a fine-tuned YOLOv8 model to locate the label, Florence-2 VLM to extract text, and RAG/LLM for sommelier advice.</p>
                 
-                // Add Assistant response to UI
-                appendMessage(data, 'ai');
+                <!-- Hidden file input -->
+                <input type="file" id="fileInput" accept="image/*" style="display:none;" onchange="handleFileSelect(event)">
+                
+                <!-- Drag and drop zone -->
+                <div class="upload-zone" id="uploadZone" 
+                     ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" 
+                     ondrop="handleDrop(event)" onclick="triggerFileInput()">
+                    <div class="upload-icon">📸</div>
+                    <div class="upload-title">Drag & drop label image here</div>
+                    <div class="upload-sub">or click to browse files from your computer</div>
+                    <div class="upload-btn-row" onclick="event.stopPropagation()">
+                        <button class="btn-upload" onclick="triggerFileInput()">📁 Choose photo</button>
+                        <button class="btn-camera" onclick="openCamera()">📷 Take photo</button>
+                    </div>
+                </div>
 
-                // Save to history (only the text content, not the full card)
-                chatHistory.push({ role: 'user', content: query });
-                chatHistory.push({ role: 'assistant', content: data.message });
+                <!-- Selected image preview -->
+                <div class="img-preview" id="imgPreview">
+                    <img id="previewImg" src="" alt="Selected label preview">
+                    <div class="img-preview-footer">
+                        <span class="img-preview-filename" id="previewFilename">label.jpg</span>
+                        <button class="img-change-btn" onclick="resetUpload()">Change</button>
+                    </div>
+                </div>
 
-            } catch (error) {
-                document.getElementById(typingId).remove();
-                appendMessage("Sorry, I encountered an error. Is the server running?", 'ai', true);
-            }
+                <!-- Submit Scan Button -->
+                <button class="btn-scan-trigger" id="scanBtn" onclick="doScanLabel()" disabled>
+                    🔍 Start Label Analysis
+                </button>
+                
+                <!-- Scanning tips -->
+                <div style="background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:1.2rem; margin-top: auto;">
+                    <p style="font-size:.8rem; color:var(--gold-light); margin:0 0 .6rem 0; text-transform:uppercase; letter-spacing:.08em; font-weight:700;">💡 Label Capture Tips</p>
+                    <ul style="list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:.4rem;">
+                        <li style="font-size:.82rem; color:var(--text-muted);">✓ Ensure the label is centered and well-lit</li>
+                        <li style="font-size:.82rem; color:var(--text-muted);">✓ Avoid glare, reflections, or obstructions</li>
+                        <li style="font-size:.82rem; color:var(--text-muted);">✓ Keep text and vintage year in sharp focus</li>
+                    </ul>
+                </div>
+            </div>
 
-            input.disabled = false;
-            document.getElementById('sendBtn').disabled = false;
-            input.focus();
+            <!-- Right Side: Scan details output (scrollable) -->
+            <div class="scan-right" id="scanRight">
+                <div class="result-placeholder" id="resultPlaceholder">
+                    <div class="ph-icon">🔬</div>
+                    <p>Label analysis, YOLO bounding box overlays, and structured recommendations will appear here.</p>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+</main>
+
+<!-- Camera modal -->
+<div class="modal-overlay" id="cameraModal" onclick="if(event.target===this)closeCamera()">
+    <div class="modal-box">
+        <h3 style="margin-top:0; margin-bottom: 1.2rem; font-family:'Playfair Display',serif; color: var(--gold-light);">📷 Capture Wine Label</h3>
+        <div style="border-radius:12px; overflow:hidden; border:1px solid var(--border); margin-bottom: 1rem;">
+            <video id="cameraStream" autoplay playsinline></video>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-modal btn-capture" onclick="capturePhoto()">📸 Capture</button>
+            <button class="btn-modal btn-cancel" onclick="closeCamera()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Wine Detail Modal -->
+<div class="modal-overlay" id="wineDetailModal" onclick="if(event.target===this)closeWineModal()">
+    <div class="wine-detail-box">
+        <button class="modal-close-btn" onclick="closeWineModal()">✕</button>
+        <div id="modalWineContent">
+            <!-- Dynamically populated -->
+        </div>
+    </div>
+</div>
+
+<script>
+    // ── Global State ───────────────────────────────────────────────────────────────
+    let chatHistory  = [];
+    let selectedFile = null;
+    let cameraStream = null;
+    let wineRegistry = {};
+    let chatSelectedFile = null;
+
+    // ── Navigation ──────────────────────────────────────────────────────────
+    function switchTab(tab) {
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('panel' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+        document.getElementById('tab'   + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+    }
+
+    // ── Chat Send Message ──────────────────────────────────────────────────
+    async function sendMessage() {
+        const input = document.getElementById('queryInput');
+        let query = input.value.trim();
+        if (!query && !chatSelectedFile) return;
+
+        input.value = '';
+        input.disabled = true;
+        document.getElementById('sendBtn').disabled = true;
+
+        // Capture image preview details if there is a file
+        let imageSrc = null;
+        let fileToUpload = chatSelectedFile;
+        if (fileToUpload) {
+            imageSrc = document.getElementById('chatPreviewImg').src;
+            clearChatImage();
         }
 
-        function appendMessage(data, sender, isError = false) {
-            const container = document.getElementById('chatContainer');
-            const msgDiv = document.createElement('div');
-            msgDiv.className = `message ${sender}-message`;
+        // Add user message to UI
+        appendMsg({ query: query || "Scan this label and recommend a wine for me.", imageSrc }, 'user');
 
-            if (sender === 'user') {
-                msgDiv.textContent = data;
-            } else if (isError) {
-                msgDiv.textContent = data;
-                msgDiv.style.color = '#ef4444';
-            } else {
-                if (data.type === 'chat') {
-                    msgDiv.textContent = data.message;
-                } else if (data.type === 'recommendation') {
-                    // Formatting AI response with wine card
-                    const priceStr = data.retrieved_wine.price ? `$${data.retrieved_wine.price}` : 'Price N/A';
-                    
-                    msgDiv.innerHTML = `
-                        <div>${data.message}</div>
-                        <div class="wine-card">
-                            <h3 class="wine-title">${data.retrieved_wine.title}</h3>
-                            <div class="wine-tags">
-                                <span class="tag">${data.retrieved_wine.variety}</span>
-                                <span class="tag">${data.retrieved_wine.country}</span>
-                            </div>
-                            <div class="wine-price">${priceStr}</div>
-                            <div style="font-size: 0.95rem; color: #cbd5e1;">${data.retrieved_wine.description}</div>
-                            <div class="meta-id">Target Semantic ID: ${data.generated_profile_thought}</div>
-                        </div>
-                    `;
-                } else {
-                    msgDiv.textContent = data.message || "Unknown response format";
+        const typingId = showTyping();
+        try {
+            let scanInfoText = "";
+            if (fileToUpload) {
+                // Upload to scan label endpoint first
+                const form = new FormData();
+                form.append('file', fileToUpload);
+                const scanRes = await fetch('/scan_label', { method: 'POST', body: form });
+                if (scanRes.ok) {
+                    const scanData = await scanRes.json();
+                    if (scanData && scanData.scan_info) {
+                        const si = scanData.scan_info;
+                        scanInfoText = `I scanned a wine label:
+- Title: ${si.title || 'Unknown'}
+- Variety: ${si.variety || 'Unknown'}
+- Country: ${si.country || 'Unknown'}
+- Year: ${si.year || 'Unknown'}
+- Price: ${si.price ? '$' + si.price : 'Unknown'}
+`;
+                    }
                 }
             }
 
-            container.appendChild(msgDiv);
-            scrollToBottom();
-        }
+            let finalQuery = query;
+            if (scanInfoText) {
+                if (query) {
+                    finalQuery = `${scanInfoText}\nMy query about this wine: ${query}`;
+                } else {
+                    finalQuery = `${scanInfoText}\nPlease introduce this wine, describe its flavors, and suggest a few similar wines from the inventory.`;
+                }
+            }
 
-        function showTyping() {
-            const container = document.getElementById('chatContainer');
-            const id = 'typing-' + Date.now();
-            const msgDiv = document.createElement('div');
-            msgDiv.id = id;
-            msgDiv.className = `message ai-message typing`;
-            msgDiv.innerHTML = `<span></span><span></span><span></span>`;
-            container.appendChild(msgDiv);
-            scrollToBottom();
-            return id;
+            const res = await fetch('/recommend', {
+                method : 'POST',
+                headers: {'Content-Type':'application/json'},
+                body   : JSON.stringify({query: finalQuery, history: chatHistory}),
+            });
+            
+            removeTyping(typingId);
+            if (!res.ok) throw new Error('API error');
+            const data = await res.json();
+            
+            appendMsg(data, 'ai');
+            
+            // Save to chat history
+            chatHistory.push({role:'user', content: finalQuery});
+            chatHistory.push({role:'assistant', content: data.message || ''});
+        } catch (e) {
+            removeTyping(typingId);
+            appendMsg({type:'chat', message:'⚠️ Server connection error. Please try again later.'}, 'ai');
         }
+        input.disabled = false;
+        document.getElementById('sendBtn').disabled = false;
+        input.focus();
+    }
 
-        function scrollToBottom() {
-            const container = document.getElementById('chatContainer');
-            container.scrollTop = container.scrollHeight;
-        }
+    function appendMsg(data, sender) {
+        const wrap = document.getElementById('chatContainer');
+        const div = document.createElement('div');
+        div.className = `msg msg-${sender}`;
 
-        function handleKeyPress(e) {
-            if (e.key === 'Enter') {
-                sendMessage();
+        if (sender === 'user') {
+            if (typeof data === 'object') {
+                let imgHtml = '';
+                if (data.imageSrc) {
+                    imgHtml = `<div style="margin-bottom:.5rem;"><img src="${data.imageSrc}" style="max-width:260px; max-height:220px; border-radius:12px; border:1px solid rgba(255,255,255,0.1);"></div>`;
+                }
+                div.innerHTML = `${imgHtml}<div>${escHtml(data.query)}</div>`;
+            } else {
+                div.textContent = data;
+            }
+        } else {
+            if (data.type === 'chat') {
+                div.innerHTML = `<div>${markdownBold(escHtml(data.message))}</div>`;
+            } else if (data.type === 'recommendation') {
+                const price = data.retrieved_wine?.price ? `$${data.retrieved_wine.price}` : 'N/A';
+                const cardId = 'wine-' + Math.random().toString(36).substr(2, 9);
+                wineRegistry[cardId] = {
+                    wine: data.retrieved_wine,
+                    xai: data.xai_explanation,
+                    attention: data.attention_highlights
+                };
+                div.innerHTML = `
+                    <div style="margin-bottom:.6rem">${markdownBold(escHtml(data.message))}</div>
+                    <div class="wine-card" onclick="openWineFromRegistry('${cardId}')" title="Click to view details & XAI explanation">
+                        <div class="wine-card-title">${escHtml(data.retrieved_wine?.title||'')}</div>
+                        <div class="wine-tags">
+                            <span class="tag">${escHtml(data.retrieved_wine?.variety||'')}</span>
+                            <span class="tag">${escHtml(data.retrieved_wine?.country||'')}</span>
+                        </div>
+                        <div class="wine-price">${price}</div>
+                        <div class="wine-desc">${escHtml((data.retrieved_wine?.description||'').slice(0,180))}${data.retrieved_wine?.description?.length>180?'…':''}</div>
+                        <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 0.8rem; text-align: right; letter-spacing: 0.05em;">🔍 View Details & XAI</div>
+                    </div>`;
+            } else {
+                div.textContent = data.message || '?';
             }
         }
-    </script>
+        wrap.appendChild(div);
+        wrap.scrollTop = wrap.scrollHeight;
+    }
+
+    function showTyping() {
+        const container = document.getElementById('chatContainer');
+        const id = 'typing-' + Date.now();
+        const msgDiv = document.createElement('div');
+        msgDiv.id = id;
+        msgDiv.className = `typing`;
+        msgDiv.innerHTML = `<span></span><span></span><span></span>`;
+        container.appendChild(msgDiv);
+        container.scrollTop = container.scrollHeight;
+        return id;
+    }
+
+    function removeTyping(id) {
+        const el = document.getElementById(id);
+        if (el) el.remove();
+    }
+
+    // ── Chat Image Upload Helpers ────────────────────────────────────────────────
+    function triggerChatFileInput() {
+        document.getElementById('chatFileInput').click();
+    }
+
+    function handleChatFileSelect(event) {
+        const file = event.target.files[0];
+        if (file) {
+            chatSelectedFile = file;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('chatPreviewImg').src = e.target.result;
+                document.getElementById('chatPreviewFilename').textContent = file.name;
+                document.getElementById('chatImagePreview').style.display = 'flex';
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function clearChatImage() {
+        chatSelectedFile = null;
+        document.getElementById('chatFileInput').value = '';
+        document.getElementById('chatImagePreview').style.display = 'none';
+    }
+
+    // ── Scan Label: File selection & upload ──────────────────────────────────────
+    function triggerFileInput() {
+        document.getElementById('fileInput').click();
+    }
+
+    function handleFileSelect(event) {
+        const file = event.target.files[0];
+        if (file) {
+            setFile(file);
+        }
+    }
+
+    function handleDragOver(e) {
+        e.preventDefault();
+        document.getElementById('uploadZone').classList.add('drag-over');
+    }
+
+    function handleDragLeave(e) {
+        e.preventDefault();
+        document.getElementById('uploadZone').classList.remove('drag-over');
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        document.getElementById('uploadZone').classList.remove('drag-over');
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) {
+            setFile(file);
+        }
+    }
+
+    function setFile(file) {
+        selectedFile = file;
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+            document.getElementById('previewImg').src = ev.target.result;
+            document.getElementById('previewFilename').textContent = file.name;
+            document.getElementById('imgPreview').classList.add('visible');
+            document.getElementById('uploadZone').style.display = 'none';
+            document.getElementById('scanBtn').disabled = false;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function resetUpload() {
+        selectedFile = null;
+        document.getElementById('previewImg').src = '';
+        document.getElementById('imgPreview').classList.remove('visible');
+        document.getElementById('uploadZone').style.display = 'flex';
+        document.getElementById('scanBtn').disabled = true;
+        document.getElementById('fileInput').value = '';
+        
+        // Reset results too
+        document.getElementById('scanRight').innerHTML = `
+            <div class="result-placeholder" id="resultPlaceholder">
+                <div class="ph-icon">🔬</div>
+                <p>Label analysis, YOLO bounding box overlays, and structured recommendations will appear here.</p>
+            </div>`;
+    }
+
+    // ── Camera capture ───────────────────────────────────────────────────────────
+    async function openCamera() {
+        try {
+            cameraStream = await navigator.mediaDevices.getUserMedia({video: {facingMode: 'environment'}});
+            document.getElementById('cameraStream').srcObject = cameraStream;
+            document.getElementById('cameraModal').classList.add('open');
+        } catch (e) {
+            alert('Could not start camera: ' + e.message);
+        }
+    }
+
+    function closeCamera() {
+        if (cameraStream) {
+            cameraStream.getTracks().forEach(t => t.stop());
+            cameraStream = null;
+        }
+        document.getElementById('cameraModal').classList.remove('open');
+    }
+
+    function capturePhoto() {
+        const video = document.getElementById('cameraStream');
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        // Apply mirror transformation
+        ctx.translate(canvas.width, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(video, 0, 0);
+        
+        canvas.toBlob(blob => {
+            const file = new File([blob], "captured_label.jpg", {type: "image/jpeg"});
+            setFile(file);
+            closeCamera();
+        }, 'image/jpeg', 0.95);
+    }
+
+    // ── Call Scan Label API ──────────────────────────────────────────────────────
+    async function doScanLabel() {
+        if (!selectedFile) return;
+        
+        const right = document.getElementById('scanRight');
+        right.innerHTML = `
+            <div class="result-placeholder">
+                <div class="ph-icon">⚡</div>
+                <p>Running YOLOv8 label detector...</p>
+                <div class="typing" style="align-self: center; margin-top: 1rem;"><span></span><span></span><span></span></div>
+            </div>`;
+        
+        document.getElementById('scanBtn').disabled = true;
+
+        try {
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+
+            const res = await fetch('/scan_label', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!res.ok) throw new Error('API server returned error');
+            const data = await res.json();
+            
+            renderScanResult(data);
+        } catch (e) {
+            renderScanError(e.message || 'Error processing image');
+        }
+        document.getElementById('scanBtn').disabled = false;
+    }
+
+    // ── Render Scan Result Functions ─────────────────────────────────────────────
+    function renderScanResult(data) {
+        const right = document.getElementById('scanRight');
+        right.innerHTML = '';
+
+        if (data.status === 'error') {
+            renderScanError(data.detail || 'Unknown error during label analysis.');
+            return;
+        }
+
+        const si = data.scan_info || {};
+
+        // 1. Structure: Split image visual boxes and structured fields
+        const splitDiv = document.createElement('div');
+        splitDiv.className = 'scan-results-split';
+
+        // Left of split: Image with YOLO boxes
+        const imgBox = document.createElement('div');
+        imgBox.className = 'scan-img-box';
+        const b64 = si.annotated_image_b64 || '';
+        if (b64) {
+            imgBox.innerHTML = `
+                <div style="padding: 0.8rem 1.2rem; border-bottom: 1px solid var(--border); font-size: 0.78rem; font-weight: 600; color: var(--gold-light); display: flex; align-items: center; justify-content: space-between;">
+                    <span>🖼️ YOLOv8 Object Detection Bounding Box</span>
+                    <span style="font-size: 0.72rem; color: var(--text-muted);">${si.yolo_used ? 'Detected label area' : 'Full image OCR'}</span>
+                </div>
+                <img src="data:image/jpeg;base64,${b64}" 
+                     style="max-width:100%; max-height:300px; width: 100%; object-fit:contain; display:block;" 
+                     alt="YOLO annotated label" />
+            `;
+        } else {
+            imgBox.innerHTML = `<p style="padding: 2rem; text-align: center; color: var(--text-muted);">No annotated image available.</p>`;
+        }
+        splitDiv.appendChild(imgBox);
+
+        // Right of split: Structured fields table
+        const metaBox = document.createElement('div');
+        metaBox.className = 'scan-meta';
+        renderExtractionTable(metaBox, si);
+        splitDiv.appendChild(metaBox);
+
+        right.appendChild(splitDiv);
+
+        // Collapsible raw OCR
+        if (si.raw_ocr) {
+            const ocrCollapse = document.createElement('div');
+            ocrCollapse.className = 'ocr-collapsible';
+            ocrCollapse.innerHTML = `
+                <div class="ocr-header" onclick="this.parentElement.classList.toggle('open')">
+                    <span>📝 Raw OCR Text (Florence-2 VLM)</span>
+                    <span>▼</span>
+                </div>
+                <div class="ocr-body">${escHtml(si.raw_ocr)}</div>
+            `;
+            right.appendChild(ocrCollapse);
+        }
+
+        // 2. Recommendations / matched wine details
+        if (data.status === 'in_stock') {
+            renderInStock(right, data);
+        } else {
+            renderNotInStock(right, data);
+        }
+    }
+
+    function renderExtractionTable(container, si) {
+        const fc = si.field_confidence || {};
+        const rows = [
+            { icon: '🍷', field: 'Wine Brand', value: si.title, fc: fc.title },
+            { icon: '🍇', field: 'Grape Variety', value: si.variety, fc: fc.variety },
+            { icon: '🌍', field: 'Origin Country', value: si.country, fc: fc.country },
+            { icon: '🗓️', field: 'Vintage Year', value: si.year, fc: fc.year },
+            { icon: '💰', field: 'Estimated Price', value: si.price ? `$${parseFloat(si.price).toFixed(0)}` : null, fc: fc.price }
+        ].filter(r => r.value);
+
+        if (!rows.length) {
+            container.innerHTML = `<p style="margin:0; font-size: 0.9rem; color: var(--text-muted);">No label details extracted.</p>`;
+            return;
+        }
+
+        let tableRows = rows.map(r => {
+            const pct = Math.round((r.fc || 0.85) * 100);
+            const color = pct >= 85 ? 'var(--green)' : pct >= 60 ? '#facc15' : '#f87171';
+            return `
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+                <td style="padding:.6rem .8rem; color:var(--text-muted); font-size:.82rem; white-space:nowrap;">${r.icon} ${r.field}</td>
+                <td style="padding:.6rem .8rem; font-weight:600; color:var(--text-main); font-size:.88rem;">${escHtml(String(r.value))}</td>
+                <td style="padding:.6rem .8rem;">
+                    <div class="conf-bar-wrap">
+                        <div class="conf-bar"><div class="conf-fill" style="width: ${pct}%; background: ${color};"></div></div>
+                        <span style="font-size:.78rem; font-weight:700; color:${color}; min-width: 35px; text-align: right;">${pct}%</span>
+                    </div>
+                </td>
+            </tr>`;
+        }).join('');
+
+        container.innerHTML = `
+            <div style="font-size: 0.78rem; font-weight: 700; color: var(--gold-light); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.4rem;">
+                📋 Extracted Label Details
+            </div>
+            <table style="width:100%; border-collapse:collapse;">
+                <thead>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,.08);">
+                        <th style="text-align:left; padding:.4rem .8rem; font-size:.65rem; color:var(--text-dim); text-transform:uppercase; font-weight:600;">Field</th>
+                        <th style="text-align:left; padding:.4rem .8rem; font-size:.65rem; color:var(--text-dim); text-transform:uppercase; font-weight:600;">Value</th>
+                        <th style="text-align:left; padding:.4rem .8rem; font-size:.65rem; color:var(--text-dim); text-transform:uppercase; font-weight:600;">Confidence</th>
+                    </tr>
+                </thead>
+                <tbody>${tableRows}</tbody>
+            </table>
+        `;
+    }
+
+    function renderInStock(container, data) {
+        const wine = data.wine || {};
+        const aroma = data.aroma_profile || {};
+        const foods = data.food_pairings || [];
+        const notes = data.tasting_notes || '';
+        const price = wine.price ? `$${parseFloat(wine.price).toFixed(0)}` : 'N/A';
+
+        const cardId = 'wine-' + Math.random().toString(36).substr(2, 9);
+        wineRegistry[cardId] = {
+            wine: wine,
+            aroma: aroma,
+            foods: foods,
+            notes: notes
+        };
+
+        // Status badge
+        const badgeDiv = document.createElement('div');
+        badgeDiv.style.margin = '1rem 0 0.5rem 0';
+        badgeDiv.innerHTML = `
+            <div style="display:flex; align-items:center; gap:0.8rem; flex-wrap:wrap; margin-bottom: 0.8rem;">
+                <span class="status-badge badge-instock"><span class="badge-dot"></span>✓ In Stock</span>
+                <span style="font-size:.82rem; color:var(--text-muted)">Match Type: <strong>${data.match_type || '—'}</strong> · Match Score: <strong>${(data.match_score * 100 || 0).toFixed(0)}%</strong></span>
+            </div>
+        `;
+        container.appendChild(badgeDiv);
+
+        // Matched wine card
+        const matchCard = document.createElement('div');
+        matchCard.className = 'result-wine-card';
+        matchCard.onclick = () => openWineFromRegistry(cardId);
+        matchCard.title = "Click to view tasting details & XAI";
+        
+        let aromaHtml = '';
+        const primary = (aroma.primary || []).slice(0, 4);
+        const secondary = (aroma.secondary || []).slice(0, 3);
+        if (primary.length) {
+            aromaHtml = `
+                <div class="aroma-section">
+                    <h4>🌸 Characteristic Aromas</h4>
+                    <div class="aroma-pills">
+                        ${primary.map(a=>`<span class="aroma-pill">${escHtml(a)}</span>`).join('')}
+                        ${secondary.map(a=>`<span class="aroma-pill secondary">${escHtml(a)}</span>`).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        let foodHtml = '';
+        if (foods.length) {
+            foodHtml = `
+                <div class="pairing-section">
+                    <h4>🍽️ Food Pairings</h4>
+                    <div class="pairing-list">
+                        ${foods.slice(0, 4).map(f=>`<span class="pairing-chip">🫕 ${escHtml(f)}</span>`).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        matchCard.innerHTML = `
+            <div class="wine-name">${escHtml(wine.title || 'Wine Details')}</div>
+            <div class="wine-tags" style="margin-bottom: 0.8rem;">
+                ${wine.variety ? `<span class="tag">${escHtml(wine.variety)}</span>` : ''}
+                ${wine.country ? `<span class="tag">${escHtml(wine.country)}</span>` : ''}
+                ${wine.winery ? `<span class="tag" style="opacity: 0.8;">🍇 ${escHtml(wine.winery)}</span>` : ''}
+            </div>
+            <div class="result-price">${price}</div>
+            <div style="font-size:0.92rem; color: #cbd5e1; line-height: 1.55; margin-bottom: 0.8rem;">${escHtml((wine.description||'').slice(0, 240))}${wine.description?.length > 240 ? '…' : ''}</div>
+            
+            ${aromaHtml}
+            ${foodHtml}
+            <div style="font-size: 0.72rem; color: var(--gold-light); margin-top: 1rem; text-align: right; border-top: 1px solid rgba(255, 255, 255, 0.06); padding-top: 0.8rem; letter-spacing: 0.05em;">🔍 View Details & XAI</div>
+        `;
+        container.appendChild(matchCard);
+
+        // Sommelier notes paragraph
+        if (notes) {
+            const noteDiv = document.createElement('div');
+            noteDiv.style.marginTop = '1.2rem';
+            noteDiv.innerHTML = `
+                <p style="font-size:.8rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:.08em; margin-bottom:.5rem; font-weight:700;">🥂 AI Sommelier Review</p>
+                <div class="tasting-box" style="font-style: italic; color: var(--gold-light);">${markdownBold(escHtml(notes))}</div>
+            `;
+            container.appendChild(noteDiv);
+        }
+    }
+
+    function renderNotInStock(container, data) {
+        const message = data.message || '';
+        const similar = data.similar_wines || [];
+
+        // Status badge
+        const badgeDiv = document.createElement('div');
+        badgeDiv.style.margin = '1rem 0 0.5rem 0';
+        badgeDiv.innerHTML = `
+            <div style="display:flex; align-items:center; gap:0.8rem; flex-wrap:wrap; margin-bottom: 0.8rem;">
+                <span class="status-badge badge-notinstock"><span class="badge-dot"></span>✗ Out of Stock</span>
+            </div>
+        `;
+        container.appendChild(badgeDiv);
+
+        // Intro message
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'similar-intro';
+        msgDiv.innerHTML = markdownBold(escHtml(message));
+        container.appendChild(msgDiv);
+
+        // Similar wines list
+        if (similar.length) {
+            const listDiv = document.createElement('div');
+            listDiv.className = 'similar-list';
+            
+            similar.forEach((w, i) => {
+                const price = w.price ? `$${parseFloat(w.price).toFixed(0)}` : 'N/A';
+                const desc = (w.description || '').slice(0, 150) + ((w.description || '').length > 150 ? '…' : '');
+                const cardId = 'wine-' + Math.random().toString(36).substr(2, 9);
+                wineRegistry[cardId] = {
+                    wine: w,
+                    notes: w.tasting_summary
+                };
+
+                listDiv.innerHTML += `
+                    <div class="similar-wine-card" style="animation-delay:${i * 0.07}s" onclick="openWineFromRegistry('${cardId}')" title="Click to view wine details">
+                        <div class="s-name">${i + 1}. ${escHtml(w.title || 'Wine')}</div>
+                        <div class="s-tags">
+                            ${w.variety ? `<span class="s-tag">${escHtml(w.variety)}</span>` : ''}
+                            ${w.country ? `<span class="s-tag">${escHtml(w.country)}</span>` : ''}
+                        </div>
+                        <div class="s-reason">🎯 ${escHtml(w.match_reason || 'High Match Score')}</div>
+                        <div class="s-price">${price}</div>
+                        ${desc ? `<div class="s-desc">${escHtml(desc)}</div>` : ''}
+                    </div>`;
+            });
+            container.appendChild(listDiv);
+        } else {
+            container.innerHTML += `<p style="color:var(--text-muted)">No suitable alternatives found in inventory.</p>`;
+        }
+    }
+
+    function renderScanError(msg) {
+        const right = document.getElementById('scanRight');
+        right.innerHTML = `
+            <div style="background:rgba(244,63,94,0.08); border:1px solid rgba(244,63,94,0.25); border-radius:14px; padding:1.2rem 1.4rem; animation: cardIn .3s ease-out;">
+                <p style="color:var(--rose); font-weight:700; margin-top: 0; margin-bottom:.4rem; display:flex; align-items:center; gap:0.4rem;">⚠️ Analysis Error</p>
+                <p style="font-size:.9rem; color:var(--text-muted); margin:0;">${escHtml(msg)}</p>
+                <button class="img-change-btn" style="margin-top: 1rem;" onclick="resetUpload()">Try another photo</button>
+            </div>`;
+    }
+
+    // ── Detail Pop-up Modal ──────────────────────────────────────────────────────
+    function openWineFromRegistry(cardId) {
+        const data = wineRegistry[cardId];
+        if (!data) return;
+        showWineModal(data);
+    }
+
+    function showWineModal(data) {
+        const wine = data.wine || {};
+        const xai = data.xai;
+        const attention = data.attention;
+        const aroma = data.aroma || {};
+        const foods = data.foods || [];
+        const notes = data.notes || '';
+
+        const priceText = wine.price ? `$${parseFloat(wine.price).toFixed(0)}` : 'N/A';
+        
+        let html = `
+            <div class="modal-wine-title">${escHtml(wine.title || 'Wine Details')}</div>
+            <div class="modal-wine-tags">
+                ${wine.variety ? `<span class="tag">${escHtml(wine.variety)}</span>` : ''}
+                ${wine.country ? `<span class="tag">${escHtml(wine.country)}</span>` : ''}
+                ${wine.winery ? `<span class="tag" style="opacity: 0.85;">🍇 ${escHtml(wine.winery)}</span>` : ''}
+            </div>
+            <div class="modal-wine-price">${priceText}</div>
+        `;
+
+        // Description
+        if (wine.description) {
+            html += `
+                <div class="modal-wine-section">
+                    <div class="modal-section-title">📋 Flavor Profile (RAG Context)</div>
+                    <div class="modal-wine-body">${escHtml(wine.description)}</div>
+                </div>
+            `;
+        }
+
+        // Sommelier Notes
+        if (notes) {
+            html += `
+                <div class="modal-wine-section">
+                    <div class="modal-section-title">🥂 Sommelier Review</div>
+                    <div class="modal-wine-body" style="font-style: italic; color: var(--gold-light);">${markdownBold(escHtml(notes))}</div>
+                </div>
+            `;
+        }
+
+        // Aromas & Pairings
+        let aromaHtml = '';
+        const primary = (aroma.primary || []).slice(0, 4);
+        const secondary = (aroma.secondary || []).slice(0, 3);
+        if (primary.length) {
+            aromaHtml += `
+                <div style="margin-bottom:0.8rem;">
+                    <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:0.4rem; text-transform:uppercase;">Aromas:</div>
+                    <div class="aroma-pills">
+                        ${primary.map(a=>`<span class="aroma-pill">${escHtml(a)}</span>`).join('')}
+                        ${secondary.map(a=>`<span class="aroma-pill secondary">${escHtml(a)}</span>`).join('')}
+                    </div>
+                </div>
+            `;
+        }
+        if (foods.length) {
+            aromaHtml += `
+                <div>
+                    <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:0.4rem; text-transform:uppercase;">Perfect Food Pairings:</div>
+                    <div class="pairing-list">
+                        ${foods.map(f=>`<span class="pairing-chip">🫕 ${escHtml(f)}</span>`).join('')}
+                    </div>
+                </div>
+            `;
+        }
+        if (aromaHtml) {
+            html += `
+                <div class="modal-wine-section">
+                    <div class="modal-section-title">🌸 Aromas & Food Pairings</div>
+                    ${aromaHtml}
+                </div>
+            `;
+        }
+
+        // SHAP Explainable AI
+        if (xai && xai.shap_values && xai.feature_names) {
+            html += `
+                <div class="modal-wine-section">
+                    <div class="modal-section-title">🔬 XAI: Feature Attribution (SHAP)</div>
+                    <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:0.8rem; line-height:1.4;">
+                        Explains how each of the 5 features contributed to the recommendation score.
+                    </p>
+                    <div class="shap-bars">
+            `;
+            xai.feature_names.forEach((name, idx) => {
+                const val = xai.shap_values[idx];
+                const pct = Math.min(Math.max(Math.abs(val) * 100, 0), 100);
+                const colorClass = val >= 0 ? 'shap-fill-pos' : 'shap-fill-neg';
+                const sign = val >= 0 ? '+' : '';
+                html += `
+                    <div class="shap-row">
+                        <span class="shap-label">${escHtml(name.replace('_', ' '))}</span>
+                        <div class="shap-track">
+                            <div class="${colorClass}" style="width: ${pct}%"></div>
+                        </div>
+                        <span class="shap-val-text" style="color:${val >= 0 ? 'var(--green)' : 'var(--rose)'}">${sign}${val.toFixed(3)}</span>
+                    </div>
+                `;
+            });
+            html += `
+                    </div>
+                    <p style="font-size:0.7rem; color:var(--text-dim); margin-top:0.6rem; line-height:1.45;">
+                        *Scientific Note: ${escHtml(xai.disclaimer)}
+                    </p>
+                </div>
+            `;
+        }
+
+        // Attention Highlights
+        if (attention && attention.attention_highlights && attention.attention_highlights.length > 0) {
+            html += `
+                <div class="modal-wine-section">
+                    <div class="modal-section-title">🔮 XAI: LLM Focus Areas (Attention Highlights)</div>
+                    <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:0.8rem; line-height:1.4;">
+                        Input keywords that Llama-3 focused on (last-layer attention weights) when generating this recommendation.
+                    </p>
+                    <div class="attention-tokens">
+            `;
+            const maxAttn = Math.max(...attention.attention_highlights.map(h => h.attention));
+            attention.attention_highlights.forEach(h => {
+                const opacity = maxAttn > 0 ? (h.attention / maxAttn) * 0.75 + 0.15 : 0.4;
+                html += `
+                    <span class="attn-token" 
+                          style="background: rgba(201, 168, 76, ${opacity}); color: #fff; border: 1px solid rgba(201,168,76,${opacity + 0.1});" 
+                          title="Attention Weight: ${h.attention.toFixed(5)}">
+                        ${escHtml(h.token.replace('Ġ', ''))} <span style="font-size:0.68rem; opacity:0.85; margin-left:0.25rem;">${(h.attention * 100).toFixed(1)}%</span>
+                    </span>
+                `;
+            });
+            html += `
+                    </div>
+                    <p style="font-size:0.7rem; color:var(--text-dim); margin-top:0.6rem; line-height:1.45;">
+                        *Scientific Note: ${escHtml(attention.disclaimer)}
+                    </p>
+                </div>
+            `;
+        }
+
+        document.getElementById('modalWineContent').innerHTML = html;
+        document.getElementById('wineDetailModal').classList.add('open');
+    }
+
+    function closeWineModal() {
+        document.getElementById('wineDetailModal').classList.remove('open');
+    }
+
+    // ── Utilities ─────────────────────────────────────────────────────────────────
+    function escHtml(s) {
+        return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    function markdownBold(t) { return String(t||'').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); }
+</script>
 </body>
 </html>

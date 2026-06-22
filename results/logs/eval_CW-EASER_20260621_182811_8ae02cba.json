@@ -1,0 +1,84 @@
+{
+  "identity": {
+    "run_id": "8ae02cba",
+    "timestamp_utc": "2026-06-21T11:28:11Z",
+    "model": {
+      "name": "CW-EASE^R",
+      "version": "1.0.0",
+      "task": "wine_recommendation"
+    }
+  },
+  "reproducibility": {
+    "git_commit": "aa82599",
+    "git_branch": "main",
+    "dataset_version": "XWines-Slim-150K-v1",
+    "random_seed": 42,
+    "python_version": "3.11.9",
+    "platform": "Windows 10",
+    "extra_params": {
+      "confidence_scheme": "soft_binary",
+      "lambda": 100,
+      "ips_beta": 0.3,
+      "ensemble_lambdas": [
+        100,
+        350
+      ]
+    }
+  },
+  "results": {
+    "recommendation": {
+      "task_description": "Top-K wine recommendation from user rating history",
+      "eval_protocol": "RatioSplit 80/20, seed=42",
+      "relevance_threshold": 4.0,
+      "n_eval_users": 9200,
+      "metrics_by_k": {
+        "@5": {
+          "Precision": 0.0684,
+          "Recall": 0.1665,
+          "F1": 0.0925,
+          "nDCG": 0.2002
+        },
+        "@10": {
+          "Precision": 0.0536,
+          "Recall": 0.2566,
+          "F1": 0.0857,
+          "nDCG": 0.2412
+        },
+        "@50": {
+          "Precision": 0.0238,
+          "Recall": 0.5526,
+          "F1": 0.0451,
+          "nDCG": 0.3027
+        },
+        "@100": {
+          "Precision": 0.0149,
+          "Recall": 0.6898,
+          "F1": 0.0291,
+          "nDCG": 0.3144
+        }
+      },
+      "delta_recall_at10_vs_baseline": 0.0062
+    }
+  },
+  "system_performance": {
+    "wall_clock_seconds": 0.053,
+    "inference_latency": {
+      "total_ms": 34800,
+      "per_sample_ms": 3.78,
+      "throughput_per_s": 264.37,
+      "n_samples": 9200,
+      "stage_breakdown_ms": {
+        "data_load_ms": 90,
+        "matrix_build_ms": 60,
+        "grid_search_ms": 28500,
+        "eval_ms": 550,
+        "ips_ensemble_ms": 5600
+      }
+    }
+  },
+  "notes": [
+    "Best scheme: soft_binary outperforms binary_pos at R@10 by +1.0pp",
+    "IPS beta=0.3 chosen via ablation on validation set"
+  ],
+  "log_schema_version": "1.0"
+}

@@ -1,0 +1,10 @@
+path: D:/TTT/CD2/synthetic_dataset
+train: images
+val: images
+
+nc: 4
+names:
+  0: brand
+  1: vintage
+  2: variety
+  3: region

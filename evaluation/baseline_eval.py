@@ -38,18 +38,22 @@ import pandas as pd
 from tqdm import tqdm
 
 # ─── CONFIG ──────────────────────────────────────────────────────────────────
-CATALOG_CSV = str(cfg.WINE_CSV)
+# KEY FIX: Use semantic catalog (hierarchical IDs) to match test data format
+CATALOG_CSV = str(cfg.WINE_SEMANTIC_CSV)   # has Semantic_ID in XX-XX-XX-XXX format
 TEST_FILE   = str(cfg.TEST_JSONL)
 OUTPUT_CSV  = str(cfg.BASELINE_CSV)
 K_VALUES    = [1, 5, 10]
 
 import argparse
 parser = argparse.ArgumentParser(description="Baseline Evaluation Suite")
-parser.add_argument("--eval_size", type=int, default=1000,
-                    help="Number of test queries to evaluate (default: 1000, use 0 for ALL)")
+parser.add_argument("--eval_size", type=int, default=500,
+                    help="Number of test queries (default 500 for fair comparison)")
+parser.add_argument("--output_csv", default=str(cfg.BASELINE_CSV),
+                    help="Output CSV path")
 args = parser.parse_args()
-EVAL_SIZE = args.eval_size if args.eval_size > 0 else 999999
-print(f"[CONFIG] eval_size={EVAL_SIZE:,}")
+EVAL_SIZE  = args.eval_size if args.eval_size > 0 else 999999
+OUTPUT_CSV = args.output_csv
+print(f"[CONFIG] eval_size={EVAL_SIZE:,} | output={OUTPUT_CSV}")
 
 # ─── AUTO-INSTALL ─────────────────────────────────────────────────────────────
 def _install(pkg, imp=None):
@@ -85,23 +89,26 @@ def make_semantic_id(row):
 def load_catalog(csv_path):
     print(f"\n{'='*60}\nLoading catalog: {csv_path}")
     df = pd.read_csv(csv_path)
-    df = df.dropna(subset=["country","variety","description","title"])
-    df["vintage"]     = df["title"].apply(extract_year)
-    df["Semantic_ID"] = df.apply(make_semantic_id, axis=1)
-    # Rich document text for retrieval
-    df["doc_text"] = df.apply(
-        lambda r: (f"{r['variety']} {r['country']} "
-                   f"{r.get('province','') or ''} "
-                   f"{r.get('region_1','') or ''} "
-                   f"{r.get('winery','') or ''} "
-                   f"{r['description']}"), axis=1)
-    # Lightweight text for BM25+ field weighting (repeat key fields 3x)
-    df["doc_text_bm25p"] = df.apply(
-        lambda r: (f"{r['variety']} {r['variety']} {r['variety']} "
-                   f"{r['country']} {r['country']} "
-                   f"{r.get('province','') or ''} "
-                   f"{r.get('region_1','') or ''} "
-                   f"{r['description']}"), axis=1)
+    # Use pre-built Hierarchical Semantic_ID (XX-XX-XX-XXX format)
+    # to match target_ids in test data
+    df = df.dropna(subset=["Semantic_ID", "description"])
+    # Build doc_text if missing
+    if "doc_text" not in df.columns:
+        df["doc_text"] = df.apply(
+            lambda r: (f"{r.get('variety','') or ''} {r.get('country','') or ''} "
+                       f"{r.get('province','') or ''} "
+                       f"{r.get('region_1','') or ''} "
+                       f"{r.get('winery','') or ''} "
+                       f"{r['description']}"), axis=1)
+    if "doc_text_bm25p" not in df.columns:
+        df["doc_text_bm25p"] = df.apply(
+            lambda r: (f"{r.get('variety','') or ''} {r.get('variety','') or ''} {r.get('variety','') or ''} "
+                       f"{r.get('country','') or ''} {r.get('country','') or ''} "
+                       f"{r.get('province','') or ''} "
+                       f"{r.get('region_1','') or ''} "
+                       f"{r['description']}"), axis=1)
+    if "price" not in df.columns:
+        df["price"] = None
     df = df.reset_index(drop=True)
     print(f"  Catalog : {len(df):,} wines | Unique IDs: {df['Semantic_ID'].nunique():,}")
     return df
@@ -754,14 +761,6 @@ def main():
     # 9. Structured Filter + BM25  (HIGH-RECALL)
     _, s = run_structured_bm25(cat, test, K_VALUES)
     summaries["Struct-Filter BM25"] = s
-
-    # 10. Structured Filter + Price Re-rank  (HIGH-RECALL)
-    _, s = run_structured_price(cat, test, K_VALUES)
-    summaries["Struct-Filter+Price"] = s
-
-    # 11. GNN-Enhanced Retrieval (GNN-Filter)
-    _, s = run_gnn_retrieval(cat, test, K_VALUES)
-    summaries["GNN-Filter"] = s
 
     # Print & Save
     print_table(summaries, K_VALUES)

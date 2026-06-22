@@ -5,39 +5,56 @@ __pycache__/
 .venv/
 *.egg-info/
 
-# Large data files (use DVC or Kaggle API instead)
+# ── Dữ liệu nội bộ / riêng tư ──────────────────────────────────────────────
+# Toàn bộ thư mục Sapo (dữ liệu bán hàng nội bộ)
+Sapo/
+data/sapo/
+
+# Dữ liệu X-Wines thô (lớn, tải lại từ Kaggle)
+data/xwines/
+
+# ── Luận văn / Báo cáo ─────────────────────────────────────────────────────
+thesis/
+
+# ── Thư mục lưu trữ (không cần track) ──────────────────────────────────────
+old/
+
+# ── Large data files ────────────────────────────────────────────────────────
 data/raw/*.csv
 data/processed/*.jsonl
+data/cv_ground_truth/
 
-# Model artifacts (large binary files)
+# ── Model artifacts (large binary) ─────────────────────────────────────────
 models/lora_wine_model/
 models/*.zip
 Archive.zip
-
-# Vector store (rebuilt automatically)
-chroma_db/
-
-# Evaluation outputs (regenerated)
-results/*.csv
-!results/baseline_comparison.csv
-!results/final_comparison.csv
-!results/evaluation_results_summary.csv
-results/*.npy
-results/*.pkl
-results/.matplotlib/
-
-# macOS
-.DS_Store
-
-# Notebooks (track only source, not outputs)
-notebooks/.ipynb_checkpoints/
-
-# Environment
-.env
-
-# Heavy models
-results/training_outputs/
 *.safetensors
 *.bin
 *.pt
 *.pth
+
+# ── Vector store (rebuilt automatically) ───────────────────────────────────
+chroma_db/
+
+# ── Evaluation cache (regenerated) ─────────────────────────────────────────
+results/*.npy
+results/*.pkl
+results/.matplotlib/
+results/training_outputs/
+results/*.csv
+!results/baseline_comparison.csv
+!results/final_comparison.csv
+!results/evaluation_results_summary.csv
+!results/cw_ease_eval_results.csv
+!results/cornac_eval_results.csv
+
+# ── Môi trường ─────────────────────────────────────────────────────────────
+.env
+.DS_Store
+
+# ── Notebooks checkpoints ──────────────────────────────────────────────────
+notebooks/.ipynb_checkpoints/
+
+# ── Scratch / temp ─────────────────────────────────────────────────────────
+scratch/
+

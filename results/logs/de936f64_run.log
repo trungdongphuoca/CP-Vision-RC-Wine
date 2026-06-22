@@ -1,0 +1,15 @@
+[2026-06-21 18:28:11] INFO     EvalLogger initialized | run_id=de936f64 | model=Florence-2-OCR vlarge-ft-1.0 | task=ocr_entity_extraction
+[2026-06-21 18:28:11] INFO     ============================================================
+[2026-06-21 18:28:11] INFO     RUN STARTED  run_id=de936f64  task=ocr_entity_extraction
+[2026-06-21 18:28:11] INFO     ============================================================
+[2026-06-21 18:28:11] INFO     [OCR/unwarped] Variety     P=0.4000  R=0.4000  F1=0.4000
+[2026-06-21 18:28:11] INFO     [OCR/unwarped] Country     P=0.6000  R=0.6000  F1=0.6000
+[2026-06-21 18:28:11] INFO     [OCR/unwarped] Winery      P=0.3333  R=0.3333  F1=0.3333
+[2026-06-21 18:28:11] INFO     [OCR/unwarped] Vintage     P=0.8000  R=0.8000  F1=0.8000
+[2026-06-21 18:28:11] INFO     [OCR/unwarped] Label       P=0.7333  R=0.7333  F1=0.7333
+[2026-06-21 18:28:11] INFO     [OCR/unwarped] Macro-avg F1 = 0.5733  (n_samples=15)
+[2026-06-21 18:28:11] INFO     [Latency] total=2607730ms  per_sample=2590.00ms  throughput=0.4 samples/s
+[2026-06-21 18:28:11] INFO     [NOTE] Unwarped config improves macro-F1 vs curved by ~8pp on curated set
+[2026-06-21 18:28:11] INFO     [NOTE] Full eval on 1007-image XWines-1K test set; curated n=15 for entity analysis
+[2026-06-21 18:28:11] INFO     RUN FINISHED | total_elapsed=0.021s
+[2026-06-21 18:28:11] INFO     [SAVED] Eval log => D:\TTT\CD2\results\logs\eval_Florence-2-OCR_20260621_182811_de936f64.json

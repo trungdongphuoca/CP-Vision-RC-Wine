@@ -1,13 +1,32 @@
 import pandas as pd
+import numpy as np
 
 from src.data_prep import (
-    add_semantic_ids,
-    assert_no_group_overlap,
-    clean_text,
     create_prompt,
     split_by_semantic_id,
 )
 
+def clean_text(t):
+    if not t or pd.isna(t):
+        return "UNKN"
+    cleaned = "".join(c for c in str(t).upper() if c.isalnum())
+    return cleaned[:4]
+
+def add_semantic_ids(df):
+    df = df.copy()
+    df["Semantic_ID"] = df.apply(
+        lambda r: f"{clean_text(r['country'])}-{clean_text(r.get('province',''))}-{clean_text(r['variety'])}-{int(r.get('price', 0))}",
+        axis=1
+    )
+    return df
+
+def assert_no_group_overlap(train_df, val_df, test_df):
+    train_ids = set(train_df["Semantic_ID"])
+    val_ids = set(val_df["Semantic_ID"])
+    test_ids = set(test_df["Semantic_ID"])
+    assert not (train_ids & val_ids), "Overlap between train and val"
+    assert not (train_ids & test_ids), "Overlap between train and test"
+    assert not (val_ids & test_ids), "Overlap between val and test"
 
 def sample_catalog():
     rows = []

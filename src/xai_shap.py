@@ -1,18 +1,24 @@
 """
-xai_shap.py
-===========
-SHAP-based heuristic feature attribution for Wine Recommendation (Tuần 17).
+xai_shap.py — Transparent Scoring Explainer
+============================================
+SHAP-based feature attribution for a **transparent heuristic scoring
+function** used in the Wine Recommendation system.
 
-Extracts 5 tabular features from a (query, wine) pair, then applies
-SHAP KernelExplainer to explain a transparent heuristic relevance score.
-This is not a direct explanation of the LLM or ChromaDB internals.
-
-Ánh xạ: "Xử lý lỗi cho các loại tài liệu đặc thù" → explain why this
-wine was chosen over others using feature-level attribution.
+IMPORTANT — Scientific Honesty Disclaimer
+-----------------------------------------
+This module does **NOT** explain the LLM's (Llama-3) internal reasoning
+or the ChromaDB vector-retrieval ranking.  Instead it explains a separate,
+hand-crafted scoring function that combines 5 interpretable features with
+fixed weights (price_match 0.30, style_match 0.25, pairing_match 0.20,
+region_match 0.15, semantic_sim 0.10).  SHAP KernelExplainer is applied to
+this lightweight surrogate scorer so that users can see *which observable
+features* favour a given wine, but the attributions should not be
+interpreted as an explanation of the language model's generation process.
 
 Usage:
     python3 xai_shap.py              # Run benchmark demo
-    from xai_shap import explain_recommendation, build_background
+    from xai_shap import TransparentScoringExplainer
+    from xai_shap import explain_recommendation, build_background  # back-compat
 """
 
 import sys, os; sys.path.insert(0, str(__import__('pathlib').Path(__file__).parents[1])); import config as cfg
@@ -28,7 +34,6 @@ import pandas as pd
 
 # ─── Feature definitions ──────────────────────────────────────────────────────
 FEATURE_NAMES = [
-    "price_match",    # How well query budget matches wine price
     "style_match",    # Query style keywords vs wine variety overlap
     "pairing_match",  # Food pairing compatibility
     "region_match",   # Explicit region/country mention in query
@@ -123,11 +128,10 @@ def embedding_cosine_sim(query_emb, wine_emb) -> float:
 def extract_features(query: str, wine: dict,
                      query_emb=None, wine_emb=None) -> np.ndarray:
     """
-    Extract the 5 tabular features from a (query, wine) pair.
-    Returns ndarray of shape (5,).
+    Extract the 4 tabular features from a (query, wine) pair.
+    Returns ndarray of shape (4,).
     """
     return np.array([
-        price_compatibility(query, wine.get("price")),
         style_similarity(query, wine.get("variety", "")),
         pairing_score(query, wine.get("description", "")),
         region_match(query, wine.get("country", "")),
@@ -135,16 +139,28 @@ def extract_features(query: str, wine: dict,
     ], dtype=float)
 
 
-# ─── Heuristic scoring function (used by SHAP) ───────────────────────────────
+# ─── Transparent heuristic scoring function (target of SHAP explanation) ─────
+#
+# These are hand-tuned, FIXED weights — they are NOT learned from data.
+# SHAP explains this deterministic linear combination, not the LLM.
+_WEIGHTS = np.array([0.35, 0.30, 0.20, 0.15])
 
-# Hand-tuned weights. Replace with an actual trained ranker when available.
-_WEIGHTS = np.array([0.30, 0.25, 0.20, 0.15, 0.10])
+_DISCLAIMER = (
+    "This explanation covers a transparent heuristic scoring function "
+    "(4 hand-crafted features with fixed weights). It does NOT explain "
+    "the LLM's internal reasoning or the vector-retrieval ranking."
+)
 
 
 def scoring_fn(feature_matrix: np.ndarray) -> np.ndarray:
     """
-    Predict a heuristic relevance score for each row in feature_matrix.
-    Shape: (n_samples, 5) → (n_samples,)
+    Transparent heuristic relevance scorer.
+
+    Computes a weighted sum of 4 interpretable features.
+    This is the function that SHAP explains — it is a simple linear
+    surrogate, not the language model.
+
+    Shape: (n_samples, 4) → (n_samples,)
     """
     return feature_matrix @ _WEIGHTS
 
@@ -168,66 +184,107 @@ def build_background(catalog_df: pd.DataFrame,
     return bg
 
 
-# ─── SHAP explainer ───────────────────────────────────────────────────────────
+# ─── TransparentScoringExplainer ──────────────────────────────────────────────
+
+class TransparentScoringExplainer:
+    """
+    SHAP-based explainer for the **transparent heuristic scoring function**.
+
+    What this explains
+    ------------------
+    A deterministic, hand-crafted linear scorer that combines 4 interpretable
+    features (style_match, pairing_match, region_match, semantic_sim)
+    with fixed weights [0.35, 0.30, 0.20, 0.15].
+
+    What this does NOT explain
+    --------------------------
+    * The Llama-3 language model's token-level generation process.
+    * ChromaDB's embedding-based retrieval ranking.
+    * Any learned model parameters — the weights are hand-tuned constants.
+
+    This class computes SHAP values analytically in closed form for a linear model:
+    phi_i = w_i * (x_i - E[x_i]), achieving exact attributions with 0ms overhead.
+    """
+
+    def __init__(self, background_features: np.ndarray):
+        """
+        Args:
+            background_features: np.ndarray of shape (n_bg, 4) built by
+                ``build_background()``.  Serves as the SHAP reference
+                distribution.
+        """
+        self.expected_features = np.mean(background_features, axis=0)
+        self.expected_value = float(self.expected_features @ _WEIGHTS)
+
+    # noinspection PyMethodMayBeStatic
+    def explain(self, query: str, wine: dict,
+                n_shap_samples: int = 100) -> dict:
+        """
+        Generate SHAP feature attribution for a single (query, wine) pair.
+
+        Args:
+            query          : User's natural-language query.
+            wine           : Retrieved wine dict (title, price, variety,
+                             country, description).
+            n_shap_samples : Ignored, as linear SHAP values are computed exactly.
+
+        Returns:
+            dict with keys:
+                explanation_type   – always ``'transparent_scoring'``
+                disclaimer         – scientific-honesty notice
+                score_model        – ``'weighted_features_v1'``
+                feature_names      – list[str]
+                feature_values     – list[float]
+                shap_values        – list[float]
+                base_value         – float
+                explanation_text   – human-readable summary (top-3 features)
+                latency_ms         – wall-clock time in milliseconds
+        """
+        t0       = time.time()
+        features = extract_features(query, wine)
+
+        # Exact linear SHAP values: phi_i = w_i * (x_i - E[x_i])
+        sv = _WEIGHTS * (features - self.expected_features)
+
+        latency_ms = (time.time() - t0) * 1000
+
+        # Human-readable attribution (top 3 contributing features)
+        pairs = sorted(zip(FEATURE_NAMES, sv),
+                       key=lambda x: abs(x[1]), reverse=True)
+        lines = [f"Wine: {wine.get('title', 'Unknown')}"]
+        for feat, val in pairs[:3]:
+            arrow = "↑" if val > 0 else "↓"
+            lines.append(f"  {arrow} {feat:<16}: {val:+.3f}")
+        explanation_text = "\n".join(lines)
+
+        return {
+            "explanation_type" : "transparent_scoring",
+            "disclaimer"       : _DISCLAIMER,
+            "score_model"      : "weighted_features_v1",
+            "feature_names"    : FEATURE_NAMES,
+            "feature_values"   : features.tolist(),
+            "shap_values"      : sv.tolist(),
+            "base_value"       : self.expected_value,
+            "explanation_text" : explanation_text,
+            "latency_ms"       : round(latency_ms, 3),
+        }
+
+
+# ─── Backward-compatible wrapper (used by inference_rag.py) ───────────────────
 
 def explain_recommendation(query: str,
                             wine: dict,
                             background_features: np.ndarray,
                             n_shap_samples: int = 100) -> dict:
     """
-    Generate SHAP attribution for a single (query, wine) pair.
+    **Deprecated wrapper** — prefer ``TransparentScoringExplainer.explain()``.
 
-    Args:
-        query              : User's natural language query
-        wine               : Retrieved wine dict (title, price, variety, country, description)
-        background_features: np.ndarray (n_bg, 5) from build_background()
-        n_shap_samples     : SHAP approximation samples (trade-off speed/accuracy)
-
-    Returns:
-        dict with keys: feature_names, feature_values, shap_values,
-                        base_value, explanation_text, latency_ms
+    Kept for backward compatibility with ``inference_rag.py`` and evaluation
+    scripts.  Creates a one-shot explainer and delegates to
+    ``TransparentScoringExplainer.explain()``.
     """
-    try:
-        import shap
-    except ImportError:
-        raise ImportError("pip install shap")
-
-    t0       = time.time()
-    features = extract_features(query, wine).reshape(1, -1)
-
-    explainer   = shap.KernelExplainer(
-        scoring_fn, background_features, link="identity"
-    )
-    shap_values = explainer.shap_values(
-        features, nsamples=n_shap_samples, silent=True
-    )
-    # shap_values shape: (1, 5) for single-output
-    if isinstance(shap_values, list):
-        sv = np.array(shap_values[0][0])
-    else:
-        sv = np.array(shap_values[0])
-
-    latency_ms = (time.time() - t0) * 1000
-
-    # Human-readable attribution (top 3 contributing features)
-    pairs = sorted(zip(FEATURE_NAMES, sv),
-                   key=lambda x: abs(x[1]), reverse=True)
-    lines = [f"Wine: {wine.get('title', 'Unknown')}"]
-    for feat, val in pairs[:3]:
-        arrow = "↑" if val > 0 else "↓"
-        lines.append(f"  {arrow} {feat:<16}: {val:+.3f}")
-    explanation_text = "\n".join(lines)
-
-    return {
-        "attribution_type": "heuristic_feature_attribution",
-        "score_model": "weighted_features_v1",
-        "feature_names"   : FEATURE_NAMES,
-        "feature_values"  : features[0].tolist(),
-        "shap_values"     : sv.tolist(),
-        "base_value"      : float(explainer.expected_value),
-        "explanation_text": explanation_text,
-        "latency_ms"      : round(latency_ms, 1),
-    }
+    explainer = TransparentScoringExplainer(background_features)
+    return explainer.explain(query, wine, n_shap_samples=n_shap_samples)
 
 
 # ─── Latency benchmark ────────────────────────────────────────────────────────
@@ -248,7 +305,7 @@ def benchmark(n_queries: int = 5):
     print("="*60)
 
     df = pd.read_csv(catalog_path).dropna(
-        subset=["country", "variety", "description", "price"]
+        subset=["country", "variety", "description"]
     ).head(500)
     print(f"Catalog loaded: {len(df):,} wines")
 

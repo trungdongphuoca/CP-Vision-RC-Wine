@@ -13,6 +13,7 @@ chromadb>=0.4.0
 # Web API
 fastapi>=0.110.0
 uvicorn>=0.28.0
+python-multipart>=0.0.9
 
 # Evaluation metrics
 rouge_score>=0.1.2
@@ -25,9 +26,17 @@ scikit-learn>=1.4.0
 # XAI
 shap>=0.44.0
 
+# ── Computer Vision (Wine Label Scanner) ──────────────────────────────
+easyocr>=1.7.0
+Pillow>=10.0.0
+opencv-python-headless>=4.9.0
+rapidfuzz>=3.6.0
+ultralytics>=8.0.0
+
 # Utilities
 pandas>=2.2.0
 numpy>=1.26.0
 tqdm>=4.66.0
 matplotlib>=3.8.0
 pytest>=8.0.0
+flask>=3.0.0

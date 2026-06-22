@@ -1,0 +1,137 @@
+[
+  {
+    "wine_id": 100080,
+    "image_url": "/curated_demo_labels/100080.jpeg",
+    "name": "Agnus Cabernet Sauvignon",
+    "variety": "['Cabernet Sauvignon']",
+    "country": "Brazil",
+    "type": "Red",
+    "year": "N/A"
+  },
+  {
+    "wine_id": 103923,
+    "image_url": "/curated_demo_labels/103923.jpeg",
+    "name": "Alvarinho",
+    "variety": "['Alvarinho']",
+    "country": "Portugal",
+    "type": "White",
+    "year": "N/A"
+  },
+  {
+    "wine_id": 104616,
+    "image_url": "/curated_demo_labels/104616.jpeg",
+    "name": "Reserva da Família Alvarinho",
+    "variety": "['Alvarinho']",
+    "country": "Portugal",
+    "type": "White",
+    "year": "N/A"
+  },
+  {
+    "wine_id": 106531,
+    "image_url": "/curated_demo_labels/106531.jpeg",
+    "name": "Riesling Trocken",
+    "variety": "['Riesling']",
+    "country": "Germany",
+    "type": "White",
+    "year": "N/A"
+  },
+  {
+    "wine_id": 106635,
+    "image_url": "/curated_demo_labels/106635.jpeg",
+    "name": "Malterdinger Spätburgunder",
+    "variety": "['Spätburgunder']",
+    "country": "Germany",
+    "type": "Red",
+    "year": "N/A"
+  },
+  {
+    "wine_id": 107214,
+    "image_url": "/curated_demo_labels/107214.jpeg",
+    "name": "Black Label Nik Weis Saar Riesling",
+    "variety": "['Riesling']",
+    "country": "Germany",
+    "type": "White",
+    "year": "N/A"
+  },
+  {
+    "wine_id": 107674,
+    "image_url": "/curated_demo_labels/107674.jpeg",
+    "name": "Lorch Riesling",
+    "variety": "['Riesling']",
+    "country": "Germany",
+    "type": "White",
+    "year": "N/A"
+  },
+  {
+    "wine_id": 109349,
+    "image_url": "/curated_demo_labels/109349.jpeg",
+    "name": "Urgestein Riesling (Trocken)",
+    "variety": "['Riesling']",
+    "country": "Germany",
+    "type": "White",
+    "year": "N/A"
+  },
+  {
+    "wine_id": 110109,
+    "image_url": "/curated_demo_labels/110109.jpeg",
+    "name": "Crescentia Assmannshäuser Höllenberg Blanc de Noirs Extra Brut",
+    "variety": "['Spätburgunder']",
+    "country": "Germany",
+    "type": "Sparkling",
+    "year": "N/A"
+  },
+  {
+    "wine_id": 100062,
+    "image_url": "/curated_demo_labels/100062.jpeg",
+    "name": "Origem Merlot",
+    "variety": "['Merlot']",
+    "country": "Brazil",
+    "type": "Red",
+    "year": "N/A"
+  },
+  {
+    "wine_id": 100191,
+    "image_url": "/curated_demo_labels/100191.jpeg",
+    "name": "Reserva Chardonnay",
+    "variety": "['Chardonnay']",
+    "country": "Brazil",
+    "type": "White",
+    "year": "N/A"
+  },
+  {
+    "wine_id": 102055,
+    "image_url": "/curated_demo_labels/102055.jpeg",
+    "name": "Fine Ruby Port",
+    "variety": "['Tinta Amarela', 'Tinta Barroca', 'Touriga Franca', 'Tinta Roriz', 'Tinto Cão']",
+    "country": "Portugal",
+    "type": "Dessert/Port",
+    "year": "N/A"
+  },
+  {
+    "wine_id": 102079,
+    "image_url": "/curated_demo_labels/102079.jpeg",
+    "name": "Maré Alta",
+    "variety": "['Loureiro', 'Alvarinho', 'Arinto']",
+    "country": "Portugal",
+    "type": "White",
+    "year": "N/A"
+  },
+  {
+    "wine_id": 102645,
+    "image_url": "/curated_demo_labels/102645.jpeg",
+    "name": "Terras de Felgueiras Espumante de Vinho Verde Seco Branco",
+    "variety": "['Loureiro', 'Arinto', 'Trajadura', 'Azal Branco']",
+    "country": "Portugal",
+    "type": "Sparkling",
+    "year": "N/A"
+  },
+  {
+    "wine_id": 102902,
+    "image_url": "/curated_demo_labels/102902.jpeg",
+    "name": "Pátria Alentejo Selection Reserva",
+    "variety": "['Alicante Bouschet', 'Aragonez', 'Trincadeira']",
+    "country": "Portugal",
+    "type": "Red",
+    "year": "N/A"
+  }
+]

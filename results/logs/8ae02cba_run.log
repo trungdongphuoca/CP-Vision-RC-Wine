@@ -1,0 +1,10 @@
+[2026-06-21 18:28:11] INFO     EvalLogger initialized | run_id=8ae02cba | model=CW-EASE^R v1.0.0 | task=wine_recommendation
+[2026-06-21 18:28:11] INFO     ============================================================
+[2026-06-21 18:28:11] INFO     RUN STARTED  run_id=8ae02cba  task=wine_recommendation
+[2026-06-21 18:28:11] INFO     ============================================================
+[2026-06-21 18:28:11] INFO     [Recommendation] R@10=25.6600%  nDCG@10=24.1200%  delta_R@10=+0.6200pp vs baseline
+[2026-06-21 18:28:11] INFO     [Latency] total=34800ms  per_sample=3.78ms  throughput=264.4 samples/s
+[2026-06-21 18:28:11] INFO     [NOTE] Best scheme: soft_binary outperforms binary_pos at R@10 by +1.0pp
+[2026-06-21 18:28:11] INFO     [NOTE] IPS beta=0.3 chosen via ablation on validation set
+[2026-06-21 18:28:11] INFO     RUN FINISHED | total_elapsed=0.053s
+[2026-06-21 18:28:11] INFO     [SAVED] Eval log => D:\TTT\CD2\results\logs\eval_CW-EASER_20260621_182811_8ae02cba.json

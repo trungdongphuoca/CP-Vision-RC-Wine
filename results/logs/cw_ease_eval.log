@@ -1,0 +1,23 @@
+========================================================================
+  CW-EASE^R: Confidence-Weighted EASE^R ΓÇö X-Wines 150K Ratings
+  Uses ALL ratings (1ΓÇô5 stars) with continuous confidence mapping
+========================================================================
+Loaded 150,000 total ratings (ALL stars, not just ΓëÑ4.0)
+Train: 116,238 interactions | Test: 33,762
+Train positives (ΓëÑ4): 67,772 | Test positives: 19,821
+Train negatives/neutral (<4): 48,466 (NEW signal used by CW-EASE^R!)
+Eval users: 9,200
+
+[Baseline] Computing EASE^R (╬╗=500, binary ΓëÑ4.0) ...
+
+[Tuning] Grid search ╬╗ per confidence scheme ...
+  binary_pos       best ╬╗=  100  Val R@10=0.000%
+  soft_binary      best ╬╗=  100  Val R@10=0.000%
+  linear           best ╬╗=  100  Val R@10=0.000%
+  shifted          best ╬╗=  100  Val R@10=0.000%
+  signed           best ╬╗=  100  Val R@10=0.000%
+  log_pos          best ╬╗=  100  Val R@10=0.000%
+
+[Eval] Full test set evaluation for each scheme ...
+  binary_pos: R@10=24.732% nDCG@10=23.371%
+  soft_binary: R@10=25.732% nDCG@10=24.175%

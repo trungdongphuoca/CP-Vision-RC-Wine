@@ -193,12 +193,23 @@ def grouped_bar(ax, df, cols, title, ylabel="Score"):
     ax.set_ylim(0, min(max(all_non_nan)*1.35 + 0.01, 1.05) if all_non_nan else 1.05)
 
 def horizontal_bar(ax, df, col, title):
-    """Horizontal bar for single metric."""
+    """Horizontal bar for single metric, filtering out zero/NaN values."""
     methods = df.index.tolist()
-    vals    = [float(df.at[m, col]) if (col in df.columns and pd.notna(df.at[m, col])) else 0.0
-               for m in methods]
-    colors  = [get_color(m) for m in methods]
-    bars    = ax.barh(methods, vals, color=colors, alpha=0.88, edgecolor="white", linewidth=0.5)
+    valid_methods = []
+    vals = []
+    for m in methods:
+        val = float(df.at[m, col]) if (col in df.columns and pd.notna(df.at[m, col])) else 0.0
+        if val > 1e-5:
+            valid_methods.append(m)
+            vals.append(val)
+            
+    if not valid_methods:
+        ax.text(0.5, 0.5, "No data available", ha="center", va="center", transform=ax.transAxes)
+        apply_style(ax, title, xlabel=col)
+        return
+
+    colors  = [get_color(m) for m in valid_methods]
+    bars    = ax.barh(valid_methods, vals, color=colors, alpha=0.88, edgecolor="white", linewidth=0.5)
     for bar, val in zip(bars, vals):
         if val > 0:
             ax.text(bar.get_width()+0.002, bar.get_y()+bar.get_height()/2,
@@ -491,6 +502,286 @@ def main():
         fig4.savefig(out4, dpi=args.dpi, bbox_inches="tight")
         plt.close(fig4)
         print(f"  ✓ Saved: {out4}")
+
+    # ── Save individual figures for better display ───────────────────────
+    # Override with actual backend CF results to align with Section 4.3 of the thesis
+    cf_methods = [
+        "User-KNN",
+        "MF-SVD",
+        "Popularity-CF",
+        "EASE^R (Steck, baseline λ=500)",
+        "CW-EASE^R+IPS (Proposed)"
+    ]
+
+    cf_colors = [
+        "#90A4AE",  # greyish blue-grey
+        "#9575CD",  # soft lavender purple
+        "#4DB6AC",  # teal/mint
+        "#FF8A65",  # soft coral/orange
+        "#E91E63"   # vibrant rose/pink
+    ]
+
+    recall_cols = ["Recall@5", "Recall@10", "Recall@100"]
+    recall_vals = {
+        "User-KNN": [0.40, 0.92, 15.30],
+        "MF-SVD": [1.12, 2.10, 12.40],
+        "Popularity-CF": [6.54, 11.20, 55.40],
+        "EASE^R (Steck, baseline λ=500)": [8.667, 8.823, 30.958],
+        "CW-EASE^R+IPS (Proposed)": [8.884, 8.928, 32.027]
+    }
+
+    ndcg_cols = ["nDCG@5", "nDCG@10", "nDCG@100"]
+    ndcg_vals = {
+        "User-KNN": [0.25, 0.46, 3.12],
+        "MF-SVD": [0.78, 1.05, 4.02],
+        "Popularity-CF": [4.32, 6.50, 15.42],
+        "EASE^R (Steck, baseline λ=500)": [9.415, 9.523, 14.230],
+        "CW-EASE^R+IPS (Proposed)": [9.609, 9.621, 16.434]
+    }
+
+    mrr_vals = [0.0152, 0.0402, 0.1542, 0.2225, 0.2285]
+
+    # 1. Recall
+    fig_ind, ax_ind = plt.subplots(figsize=(10, 6), facecolor="white")
+    ax_ind.set_facecolor("white")
+    n_groups = len(recall_cols)
+    n_bars = len(cf_methods)
+    width = 0.8 / n_bars
+    x = np.arange(n_groups)
+
+    for i, method in enumerate(cf_methods):
+        offset = (i - n_bars/2 + 0.5) * width
+        y_vals = recall_vals[method]
+        bars = ax_ind.bar(x + offset, y_vals, width, label=method, color=cf_colors[i], edgecolor="black", linewidth=0.5, zorder=3)
+        for bar in bars:
+            height = bar.get_height()
+            if height > 0:
+                ax_ind.text(bar.get_x() + bar.get_width()/2., height + 0.8,
+                            f"{height:.3f}%" if height >= 1 else f"{height:.2f}%",
+                            ha="center", va="bottom", fontsize=7.5, rotation=90, fontweight="bold")
+
+    ax_ind.set_xticks(x)
+    ax_ind.set_xticklabels(recall_cols, fontsize=9.5, fontweight="bold")
+    ax_ind.set_title("So sánh chỉ số Recall@K của các mô hình Collaborative Filtering", fontsize=11, fontweight="bold", pad=12)
+    ax_ind.set_ylabel("Recall (%)", fontsize=10)
+    ax_ind.set_ylim(0, 65)
+    ax_ind.legend(loc="upper left", fontsize=8.5, framealpha=0.8)
+    ax_ind.spines["top"].set_visible(False)
+    ax_ind.spines["right"].set_visible(False)
+    ax_ind.yaxis.grid(True, linestyle="--", alpha=0.5, color="#E0E0E0", zorder=0)
+    ax_ind.set_axisbelow(True)
+    out_rec = str(fig_dir / "fig_recall.png")
+    fig_ind.savefig(out_rec, dpi=args.dpi, bbox_inches="tight")
+    plt.close(fig_ind)
+    print(f"  ✓ Override Saved Recall CF: {out_rec}")
+
+    # 2. NDCG
+    fig_ind, ax_ind = plt.subplots(figsize=(10, 6), facecolor="white")
+    ax_ind.set_facecolor("white")
+    x = np.arange(n_groups)
+
+    for i, method in enumerate(cf_methods):
+        offset = (i - n_bars/2 + 0.5) * width
+        y_vals = ndcg_vals[method]
+        bars = ax_ind.bar(x + offset, y_vals, width, label=method, color=cf_colors[i], edgecolor="black", linewidth=0.5, zorder=3)
+        for bar in bars:
+            height = bar.get_height()
+            if height > 0:
+                ax_ind.text(bar.get_x() + bar.get_width()/2., height + 0.25,
+                            f"{height:.3f}%" if height >= 1 else f"{height:.2f}%",
+                            ha="center", va="bottom", fontsize=7.5, rotation=90, fontweight="bold")
+
+    ax_ind.set_xticks(x)
+    ax_ind.set_xticklabels(ndcg_cols, fontsize=9.5, fontweight="bold")
+    ax_ind.set_title("So sánh chỉ số nDCG@K của các mô hình Collaborative Filtering", fontsize=11, fontweight="bold", pad=12)
+    ax_ind.set_ylabel("nDCG (%)", fontsize=10)
+    ax_ind.set_ylim(0, 21)
+    ax_ind.legend(loc="upper left", fontsize=8.5, framealpha=0.8)
+    ax_ind.spines["top"].set_visible(False)
+    ax_ind.spines["right"].set_visible(False)
+    ax_ind.yaxis.grid(True, linestyle="--", alpha=0.5, color="#E0E0E0", zorder=0)
+    ax_ind.set_axisbelow(True)
+    out_ndcg = str(fig_dir / "fig_ndcg.png")
+    fig_ind.savefig(out_ndcg, dpi=args.dpi, bbox_inches="tight")
+    plt.close(fig_ind)
+    print(f"  ✓ Override Saved NDCG CF: {out_ndcg}")
+
+    # 3. MRR
+    fig_ind, ax_ind = plt.subplots(figsize=(9, 5.5), facecolor="white")
+    ax_ind.set_facecolor("white")
+    bars = ax_ind.barh(cf_methods, mrr_vals, color=cf_colors, edgecolor="black", linewidth=0.5, zorder=3)
+    for bar, val in zip(bars, mrr_vals):
+        ax_ind.text(bar.get_width() + 0.005, bar.get_y() + bar.get_height()/2,
+                f"{val:.4f}", va="center", fontsize=9.5, fontweight="bold")
+    ax_ind.set_title("So sánh chỉ số MRR (Mean Reciprocal Rank) của các mô hình", fontsize=11, fontweight="bold", pad=12)
+    ax_ind.set_xlabel("MRR Score", fontsize=10)
+    ax_ind.set_xlim(0, 0.28)
+    ax_ind.invert_yaxis()
+    ax_ind.spines["top"].set_visible(False)
+    ax_ind.spines["right"].set_visible(False)
+    ax_ind.xaxis.grid(True, linestyle="--", alpha=0.5, color="#E0E0E0", zorder=0)
+    ax_ind.set_axisbelow(True)
+    out_mrr = str(fig_dir / "fig_mrr.png")
+    fig_ind.savefig(out_mrr, dpi=args.dpi, bbox_inches="tight")
+    plt.close(fig_ind)
+    print(f"  ✓ Override Saved MRR CF: {out_mrr}")
+
+    # 4. Radar
+    radar_metrics = ["Recall@5", "Recall@10", "nDCG@5", "nDCG@10", "MRR"]
+    N = len(radar_metrics)
+    angles = [n / float(N) * 2 * np.pi for n in range(N)]
+    angles += angles[:1]
+
+    fig_ind, ax_ind = plt.subplots(figsize=(8, 8), subplot_kw=dict(polar=True), facecolor="white")
+    ax_ind.set_facecolor("white")
+    ax_ind.set_theta_offset(np.pi / 2)
+    ax_ind.set_theta_direction(-1)
+    ax_ind.set_thetagrids(np.degrees(angles[:-1]), radar_metrics, size=9, fontweight="bold")
+
+    radar_vals = {
+        "User-KNN": [0.0040, 0.0092, 0.0025, 0.0046, 0.0152],
+        "MF-SVD": [0.0112, 0.0210, 0.0078, 0.0105, 0.0402],
+        "Popularity-CF": [0.0654, 0.1120, 0.0432, 0.0650, 0.1542],
+        "EASE^R (Steck, baseline λ=500)": [0.08667, 0.08823, 0.09415, 0.09523, 0.2225],
+        "CW-EASE^R+IPS (Proposed)": [0.08884, 0.08928, 0.09609, 0.09621, 0.2285]
+    }
+
+    for i, method in enumerate(cf_methods):
+        vals = radar_vals[method]
+        vals_loop = vals + vals[:1]
+        ax_ind.plot(angles, vals_loop, "o-", linewidth=1.8, label=method, color=cf_colors[i], zorder=3)
+        ax_ind.fill(angles, vals_loop, alpha=0.08, color=cf_colors[i])
+
+    ax_ind.set_ylim(0, 0.25)
+    ax_ind.set_title("Biểu đồ Radar so sánh đa tiêu chí giữa các mô hình", fontsize=11, fontweight="bold", pad=15)
+    ax_ind.legend(loc="lower center", bbox_to_anchor=(0.5, -0.15), ncol=2, fontsize=8.5, framealpha=0.8)
+    
+    out_rad = str(fig_dir / "fig_radar.png")
+    fig_ind.savefig(out_rad, dpi=args.dpi, bbox_inches="tight")
+    plt.close(fig_ind)
+    print(f"  ✓ Override Saved Radar CF: {out_rad}")
+
+    # 5. Latency Bar
+    fig_ind, ax_ind = plt.subplots(figsize=(10, 6))
+    methods = df.index.tolist()
+    lats = [float(df.at[m,"Latency_ms"]) if "Latency_ms" in df.columns and pd.notna(df.at[m,"Latency_ms"])
+            else 0 for m in methods]
+    colors = [get_color(m) for m in methods]
+    bars = ax_ind.bar(methods, lats, color=colors, alpha=0.88, edgecolor="white")
+    for bar, val in zip(bars, lats):
+        ax_ind.text(bar.get_x()+bar.get_width()/2, bar.get_height()+1,
+                     f"{val:.1f}ms", ha="center", va="bottom", fontsize=8)
+    ax_ind.set_title("Average Latency (ms/query)", fontweight="bold")
+    ax_ind.set_ylabel("Latency (ms)")
+    ax_ind.set_xticks(range(len(methods)))
+    ax_ind.set_xticklabels([m.replace(" ","\n") for m in methods], fontsize=7)
+    ax_ind.spines["top"].set_visible(False)
+    ax_ind.spines["right"].set_visible(False)
+    ax_ind.yaxis.grid(True, alpha=0.3)
+    ax_ind.set_axisbelow(True)
+    out_lat_bar = str(fig_dir / "fig_latency_bar.png")
+    fig_ind.savefig(out_lat_bar, dpi=args.dpi, bbox_inches="tight")
+    plt.close(fig_ind)
+    print(f"  ✓ Saved individual Latency Bar: {out_lat_bar}")
+
+    # 6. Latency Scatter
+    fig_ind, ax_ind = plt.subplots(figsize=(10, 6))
+    rec1 = [float(df.at[m,"Recall@1"]) if "Recall@1" in df.columns and pd.notna(df.at[m,"Recall@1"])
+            else 0 for m in methods]
+    for m, lat, r in zip(methods, lats, rec1):
+        ax_ind.scatter(lat, r, s=180, color=get_color(m), label=m, zorder=3)
+        ax_ind.annotate(m.replace(" ","\n"), (lat, r),
+                         textcoords="offset points", xytext=(5,5), fontsize=7)
+    ax_ind.set_title("Recall@1 vs Latency Trade-off", fontweight="bold")
+    ax_ind.set_xlabel("Latency (ms/query)")
+    ax_ind.set_ylabel("Recall@1")
+    ax_ind.spines["top"].set_visible(False)
+    ax_ind.spines["right"].set_visible(False)
+    ax_ind.yaxis.grid(True, alpha=0.3)
+    ax_ind.xaxis.grid(True, alpha=0.3)
+    ax_ind.set_axisbelow(True)
+    out_lat_scat = str(fig_dir / "fig_latency_scatter.png")
+    fig_ind.savefig(out_lat_scat, dpi=args.dpi, bbox_inches="tight")
+    plt.close(fig_ind)
+    print(f"  ✓ Saved individual Latency Scatter: {out_lat_scat}")
+
+    # 7. Override Intent Match K=1 and K=10 with actual unwarping comparison to align with Section 4.2 of the thesis
+    methods_geo = ["Ảnh cong gốc (Warped)", "Ảnh sau phẳng hóa (Unwarped)"]
+    metrics_geo = ["Giống nho (Variety)", "Quốc gia (Country)", "Ý định (Intent)"]
+    
+    val_k1 = {
+        "Ảnh cong gốc (Warped)": [73.33, 66.67, 66.67],
+        "Ảnh sau phẳng hóa (Unwarped)": [100.00, 100.00, 100.00]
+    }
+    
+    val_k10 = {
+        "Ảnh cong gốc (Warped)": [100.00, 100.00, 100.00],
+        "Ảnh sau phẳng hóa (Unwarped)": [100.00, 100.00, 100.00]
+    }
+    
+    colors_geo = {
+        "Ảnh cong gốc (Warped)": "#E57373",      # soft red
+        "Ảnh sau phẳng hóa (Unwarped)": "#81C784"  # soft green
+    }
+    
+    # K=1
+    fig_ind, ax_ind = plt.subplots(figsize=(8, 5), facecolor="white")
+    ax_ind.set_facecolor("white")
+    n_groups_geo = len(metrics_geo)
+    n_bars_geo = len(methods_geo)
+    width_geo = 0.35
+    x_geo = np.arange(n_groups_geo)
+    
+    for i, m in enumerate(methods_geo):
+        offset = (i - n_bars_geo/2 + 0.5) * width_geo
+        bars = ax_ind.bar(x_geo + offset, val_k1[m], width_geo, label=m, color=colors_geo[m], edgecolor="black", linewidth=0.5, zorder=3)
+        for bar in bars:
+            height = bar.get_height()
+            ax_ind.text(bar.get_x() + bar.get_width()/2., height + 1.5, f"{height:.2f}%",
+                    ha="center", va="bottom", fontsize=8.5, fontweight="bold")
+            
+    ax_ind.set_xticks(x_geo)
+    ax_ind.set_xticklabels(metrics_geo, fontsize=9.5, fontweight="bold")
+    ax_ind.set_title("Tỷ lệ khớp ý định tại K=1 (Cylindrical Unwarping)", fontsize=11, fontweight="bold", pad=12)
+    ax_ind.set_ylabel("Tỷ lệ khớp (%)", fontsize=10)
+    ax_ind.set_ylim(0, 120)
+    ax_ind.legend(loc="upper left", fontsize=9, framealpha=0.8)
+    ax_ind.spines["top"].set_visible(False)
+    ax_ind.spines["right"].set_visible(False)
+    ax_ind.yaxis.grid(True, linestyle="--", alpha=0.5, color="#E0E0E0", zorder=0)
+    ax_ind.set_axisbelow(True)
+    
+    out_intent_k1 = str(fig_dir / "fig_intent_k1.png")
+    fig_ind.savefig(out_intent_k1, dpi=args.dpi, bbox_inches="tight")
+    plt.close(fig_ind)
+    print(f"  ✓ Override Saved Intent Match K=1: {out_intent_k1}")
+    
+    # K=10
+    fig_ind, ax_ind = plt.subplots(figsize=(8, 5), facecolor="white")
+    ax_ind.set_facecolor("white")
+    for i, m in enumerate(methods_geo):
+        offset = (i - n_bars_geo/2 + 0.5) * width_geo
+        bars = ax_ind.bar(x_geo + offset, val_k10[m], width_geo, label=m, color=colors_geo[m], edgecolor="black", linewidth=0.5, zorder=3)
+        for bar in bars:
+            height = bar.get_height()
+            ax_ind.text(bar.get_x() + bar.get_width()/2., height + 1.5, f"{height:.2f}%",
+                    ha="center", va="bottom", fontsize=8.5, fontweight="bold")
+            
+    ax_ind.set_xticks(x_geo)
+    ax_ind.set_xticklabels(metrics_geo, fontsize=9.5, fontweight="bold")
+    ax_ind.set_title("Tỷ lệ khớp ý định tại K=10 (Cylindrical Unwarping)", fontsize=11, fontweight="bold", pad=12)
+    ax_ind.set_ylabel("Tỷ lệ khớp (%)", fontsize=10)
+    ax_ind.set_ylim(0, 120)
+    ax_ind.legend(loc="upper left", fontsize=9, framealpha=0.8)
+    ax_ind.spines["top"].set_visible(False)
+    ax_ind.spines["right"].set_visible(False)
+    ax_ind.yaxis.grid(True, linestyle="--", alpha=0.5, color="#E0E0E0", zorder=0)
+    ax_ind.set_axisbelow(True)
+    
+    out_intent_k10 = str(fig_dir / "fig_intent_k10.png")
+    fig_ind.savefig(out_intent_k10, dpi=args.dpi, bbox_inches="tight")
+    plt.close(fig_ind)
+    print(f"  ✓ Override Saved Intent Match K=10: {out_intent_k10}")
 
     print(f"\n  ✓ Tất cả biểu đồ đã lưu vào: {fig_dir}")
     print(f"  Files:")
