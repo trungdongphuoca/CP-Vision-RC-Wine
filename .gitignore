@@ -58,3 +58,8 @@ notebooks/.ipynb_checkpoints/
 # ── Scratch / temp ─────────────────────────────────────────────────────────
 scratch/
 
+
+# Large processed data files (>50MB)
+data/processed/wine_catalog_vs_sid.csv
+data/processed/wine_id_mapping.json
+data/processed/wine_catalog_semantic.csv
